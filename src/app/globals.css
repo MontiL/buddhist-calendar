@@ -72,8 +72,11 @@
   background-color: var(--muted);
 }
 .fc .fc-list-day-text,
-.fc .fc-list-day-side-text {
+.fc .fc-list-day-side-text,
+.fc .fc-list-day-text a,
+.fc .fc-list-day-side-text a {
   color: var(--foreground);
+  text-decoration: none;
 }
 .fc .fc-list-event:hover td {
   background-color: var(--accent);
