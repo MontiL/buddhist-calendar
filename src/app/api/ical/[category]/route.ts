@@ -10,7 +10,7 @@ import { CITY_COORDINATES } from '@/lib/solar-noon'
 
 const CALENDAR_NAMES: Record<string, string> = {
   festivals: '佛菩薩紀念日',
-  fasting: '六齋日／長齋月',
+  fasting: '齋日',
   posadha: '布薩日',
   'solar-noon': '過午時間',
 }
