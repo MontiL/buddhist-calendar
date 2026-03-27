@@ -1,7 +1,8 @@
 import { BuddhistCalendar } from '@/components/calendar/buddhist-calendar'
+import { convertToTaiwanTime } from '@/lib/taiwan-time'
 
 export default function Home() {
-  const year = new Date().getFullYear()
+  const year = convertToTaiwanTime(new Date()).getUTCFullYear()
   return (
     <main className="flex flex-col flex-1 p-4 sm:p-6">
       <header className="mb-4">
