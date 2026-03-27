@@ -112,7 +112,7 @@ export async function GET(
         dtstart,
         dtend,
         allDay: true,
-        description: `過午時間：${e.solarNoon}\n過午時間由 suncalc 天文演算法計算，以CWA官方值校正（${cwaUrl}）；誤差 ±10 秒以內（嘉義較大）`,
+        description: `過午時間：${e.solarNoon}\n過午時間由 suncalc 天文演算法計算，以CWA官方值校正（${cwaUrl}）；誤差 ±10 秒以內（嘉義較大）\n詳細說明：https://buddhist-calendar.vercel.app/solar-noon`,
       })
     }
   }
