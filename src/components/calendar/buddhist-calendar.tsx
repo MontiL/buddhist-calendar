@@ -11,6 +11,7 @@ import { CalendarToolbar, type CalendarView, type CalendarToggles } from './tool
 import { DayCellContent } from './day-cell-content'
 import { EventPopup } from './event-popup'
 import { useCity } from '@/hooks/use-city'
+import { useMediaQuery } from '@/hooks/use-media-query'
 import {
   getBuddhistCalendarEvents,
   getSolarNoonEvents,
@@ -40,6 +41,7 @@ function toFcEvents(events: BuddhistCalendarEvent[]) {
 export function BuddhistCalendar() {
   const calendarRef = useRef<FullCalendar>(null)
   const { city, updateCity } = useCity()
+  const isDesktop = useMediaQuery('(min-width: 768px)')
 
   const [view, setView] = useState<CalendarView>('dayGridMonth')
   const [title, setTitle] = useState('')
@@ -97,12 +99,12 @@ export function BuddhistCalendar() {
     if (toggles.posadha) {
       filtered.push(...buddhistEvents.filter(e => e.type === 'posadha'))
     }
-    if (toggles.solarNoon) {
+    if (toggles.solarNoon && (isDesktop || view !== 'dayGridMonth')) {
       filtered.push(...solarNoonEvents)
     }
 
     return toFcEvents(filtered)
-  }, [visibleRange, toggles, city])
+  }, [visibleRange, toggles, city, isDesktop, view])
 
   return (
     <div className="h-full">

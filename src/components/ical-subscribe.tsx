@@ -52,7 +52,7 @@ function toSubscriptionLinks(
 ): SubscriptionLink {
   return {
     label,
-    googleUrl: `https://calendar.google.com/calendar/render?cid=${encodeURIComponent(`${baseUrl}${path}`)}`,
+    googleUrl: `https://calendar.google.com/calendar/render?cid=${encodeURIComponent(`webcal://${baseUrl.replace(/^https?:\/\//, '')}${path}`)}`,
     webcalUrl: `webcal://${baseUrl.replace(/^https?:\/\//, '')}${path}`,
   }
 }
