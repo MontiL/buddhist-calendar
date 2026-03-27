@@ -6,7 +6,7 @@ import {
 } from '@/lib/lunar-utils'
 import { generateICalString, formatICalDate, type ICalEvent } from '@/lib/ical-utils'
 import type { CityName } from '@/lib/solar-noon'
-import { CITY_COORDINATES } from '@/lib/solar-noon'
+import { CITY_COORDINATES, CITY_NAMES_ZH } from '@/lib/solar-noon'
 
 const CALENDAR_NAMES: Record<string, string> = {
   festivals: '佛菩薩紀念日',
@@ -104,21 +104,29 @@ export async function GET(
       if (!e.date || !e.solarNoon) continue
       const dtstart = formatICalDate(e.date)
       const dtend = formatICalDate(addDays(e.date, 1))
-      const year = e.date.getFullYear()
-      const cwaUrl = `https://www.cwa.gov.tw/Data/astronomy/${year}suntr.pdf`
       icalEvents.push({
         uid: `${e.id}-${city}@buddhist-calendar`,
         summary: e.title,
         dtstart,
         dtend,
         allDay: true,
-        description: `過午時間：${e.solarNoon}\n採用 astronomy-engine（JPL DE421）計算，與CWA官方值誤差 99.6% 在 ±3 秒以內（${cwaUrl}）\n詳細說明：https://buddhist-calendar.vercel.app/solar-noon`,
+        description: `過午時間：${e.solarNoon}\n採用 astronomy-engine（JPL DE421）計算，與中央氣象署官方值比對：99.6% 誤差 ≤3 秒，最大誤差 11 秒。\n詳細說明：https://buddhist-calendar.vercel.app/solar-noon`,
       })
     }
   }
 
   const calendarName = CALENDAR_NAMES[category]
-  const icalString = generateICalString(calendarName, icalEvents)
+  const cityName = category === 'solar-noon'
+    ? CITY_NAMES_ZH[
+        (searchParams.get('city') ?? 'taipei') in CITY_COORDINATES
+          ? ((searchParams.get('city') ?? 'taipei') as CityName)
+          : 'taipei'
+      ]
+    : undefined
+  const calendarDesc = category === 'solar-noon'
+    ? `佛教齋戒行事曆 — ${cityName}過午時間。採用 astronomy-engine（JPL DE421）計算，與中央氣象署官方值比對：99.6% 誤差 ≤3 秒，最大誤差 11 秒。詳細說明：https://buddhist-calendar.vercel.app/solar-noon`
+    : undefined
+  const icalString = generateICalString(calendarName, icalEvents, calendarDesc)
 
   return new NextResponse(icalString, {
     headers: {

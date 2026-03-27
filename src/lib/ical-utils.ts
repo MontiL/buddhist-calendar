@@ -36,6 +36,7 @@ function foldLine(line: string): string {
 export function generateICalString(
   calendarName: string,
   events: ICalEvent[],
+  calendarDesc?: string,
 ): string {
   const lines: string[] = [
     'BEGIN:VCALENDAR',
@@ -46,6 +47,9 @@ export function generateICalString(
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
   ]
+  if (calendarDesc) {
+    lines.push(foldLine(`X-WR-CALDESC:${escapeIcal(calendarDesc)}`))
+  }
 
   for (const event of events) {
     const valueDatePrefix = event.allDay ? ';VALUE=DATE' : ''
