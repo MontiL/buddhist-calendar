@@ -108,7 +108,7 @@ export function CalendarToolbar({
           onChange={v => onToggle('festival', v)}
         />
         <SwitchLabel
-          label="六齋日／長齋月"
+          label="齋日"
           checked={toggles.fasting}
           color="bg-yellow-200"
           onChange={v => onToggle('fasting', v)}
