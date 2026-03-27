@@ -65,14 +65,14 @@ export function ICalSubscribe({ city }: ICalSubscribeProps) {
       : 'https://buddhist-calendar.vercel.app'
 
   const subscriptions = [
-    toSubscriptionLinks('佛菩薩紀念日', '/api/ical/festivals', baseUrl),
     toSubscriptionLinks('齋日', '/api/ical/fasting', baseUrl),
-    toSubscriptionLinks('布薩日', '/api/ical/posadha', baseUrl),
     toSubscriptionLinks(
       `過午時間（${CITY_NAMES_ZH[city]}）`,
       `/api/ical/solar-noon?city=${city}`,
       baseUrl,
     ),
+    toSubscriptionLinks('布薩日', '/api/ical/posadha', baseUrl),
+    toSubscriptionLinks('佛菩薩紀念日', '/api/ical/festivals', baseUrl),
   ]
 
   return (
