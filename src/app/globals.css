@@ -2,13 +2,87 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+/* Color themes — applied via data-color-theme on <html> */
+[data-color-theme="blue"] {
+  --primary: oklch(0.546 0.245 262.881);
+  --primary-foreground: oklch(0.985 0 0);
+  --ring: oklch(0.546 0.245 262.881);
+}
+[data-color-theme="blue"].dark {
+  --primary: oklch(0.707 0.165 254.624);
+  --primary-foreground: oklch(0.13 0.028 261.692);
+  --ring: oklch(0.707 0.165 254.624);
+}
+[data-color-theme="green"] {
+  --primary: oklch(0.527 0.154 150.069);
+  --primary-foreground: oklch(0.985 0 0);
+  --ring: oklch(0.527 0.154 150.069);
+}
+[data-color-theme="green"].dark {
+  --primary: oklch(0.696 0.17 162.48);
+  --primary-foreground: oklch(0.13 0.028 150);
+  --ring: oklch(0.696 0.17 162.48);
+}
+[data-color-theme="rose"] {
+  --primary: oklch(0.586 0.253 17.585);
+  --primary-foreground: oklch(0.985 0 0);
+  --ring: oklch(0.586 0.253 17.585);
+}
+[data-color-theme="rose"].dark {
+  --primary: oklch(0.712 0.194 13.428);
+  --primary-foreground: oklch(0.13 0.028 17.585);
+  --ring: oklch(0.712 0.194 13.428);
+}
+[data-color-theme="orange"] {
+  --primary: oklch(0.647 0.222 41.116);
+  --primary-foreground: oklch(0.985 0 0);
+  --ring: oklch(0.647 0.222 41.116);
+}
+[data-color-theme="orange"].dark {
+  --primary: oklch(0.75 0.183 55.934);
+  --primary-foreground: oklch(0.13 0.028 41.116);
+  --ring: oklch(0.75 0.183 55.934);
+}
+[data-color-theme="violet"] {
+  --primary: oklch(0.541 0.281 293.009);
+  --primary-foreground: oklch(0.985 0 0);
+  --ring: oklch(0.541 0.281 293.009);
+}
+[data-color-theme="violet"].dark {
+  --primary: oklch(0.702 0.183 293.541);
+  --primary-foreground: oklch(0.13 0.028 293.009);
+  --ring: oklch(0.702 0.183 293.541);
+}
+
+/* FullCalendar overrides */
+.fc .fc-daygrid-day-number {
+  padding: 0;
+}
+.fc .fc-daygrid-day-top {
+  justify-content: center;
+}
+.fc-theme-standard td,
+.fc-theme-standard th {
+  border-color: hsl(var(--border));
+}
+.fc-theme-standard .fc-scrollgrid {
+  border-color: hsl(var(--border));
+}
+.fc .fc-list-day-cushion {
+  background-color: hsl(var(--muted));
+}
+.fc .fc-list-event:hover td {
+  background-color: hsl(var(--accent));
+  cursor: pointer;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: "Geist", "Geist Fallback", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", "Geist Mono Fallback", ui-monospace, monospace;
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
