@@ -35,6 +35,23 @@ export const CITY_NAMES_ZH: Record<CityName, string> = {
   hengchun: '恆春',
 } as const
 
+// CWA 附表城市偏移秒數（來源：中央氣象署年度《太陽過中天時刻》PDF）
+// 代表各城市相對於東經 120° 子午圈的時刻差，為 CWA 觀測站基準的固定值。
+// 嘉義未列於 CWA 附表，以 0（120°E 基準）計。
+const CWA_CITY_OFFSET_SEC: Record<CityName, number> = {
+  taipei:    -360,
+  hsinchu:   -240,
+  taichung:  -164,
+  hualien:   -384,
+  nantou:    -216,
+  penghu:     +96,
+  chiayi:       0,
+  tainan:     -48,
+  taitung:   -288,
+  kaohsiung:  -72,
+  hengchun:  -168,
+}
+
 /**
  * 從任意 Date 提取台灣時區的日期元件（年、月、日）。
  * 無論執行環境的系統時區為何，均以 Asia/Taipei 為準。
@@ -51,45 +68,43 @@ function getTaiwanDateParts(date: Date): { year: number; month: number; day: num
 }
 
 /**
- * 計算指定日期、城市的太陽過中時刻（UTC Date）。
+ * 計算指定日期太陽過東經 120° 子午圈的時刻（UTC Date）。
  *
  * 演算法：使用 astronomy-engine（基於 JPL DE421 星曆表），
- * 內建 ΔT 修正，精度 < 2 秒。
- * 以城市實際座標直接計算太陽時角為零（子午線過中）的時刻。
+ * 內建 ΔT 修正，與 CWA 官方值誤差 ± 2 秒以內。
  */
-function solarNoonRaw(date: Date, lat: number, lng: number): Date {
+function solarNoonAt120E(date: Date): Date {
   // 以台灣日期的 02:00 UTC（= 台灣時間 10:00）作為搜尋起點，
   // 確保搜尋起點早於台灣最早的日中時刻（約 11:43 台灣時間）。
   const { year, month, day } = getTaiwanDateParts(date)
   const searchStart = new Date(Date.UTC(year, month, day, 2, 0, 0))
 
-  const observer = new Observer(lat, lng, 0)
-  const result = SearchHourAngle(Body.Sun, observer, 0, searchStart, 1)
-  return result.time.date
+  // 緯度不影響子午線過中時刻，以 0° 計算即可
+  const observer = new Observer(0, 120.0, 0)
+  return SearchHourAngle(Body.Sun, observer, 0, searchStart, 1).time.date
 }
 
 /**
  * 計算指定日期和城市的太陽過中時間（HH:mm:ss）
  */
 export function getSolarNoon(date: Date, city: CityName = 'taipei'): string {
-  const { lat, lng } = CITY_COORDINATES[city]
-  return format(convertToTaiwanTime(solarNoonRaw(date, lat, lng)), 'HH:mm:ss')
+  const noon = new Date(solarNoonAt120E(date).getTime() + CWA_CITY_OFFSET_SEC[city] * 1000)
+  return format(convertToTaiwanTime(noon), 'HH:mm:ss')
 }
 
 /**
  * 計算指定日期和城市的太陽過中時間（HH:mm，無秒數）
  */
 export function getSolarNoonShort(date: Date, city: CityName = 'taipei'): string {
-  const { lat, lng } = CITY_COORDINATES[city]
-  return format(convertToTaiwanTime(solarNoonRaw(date, lat, lng)), 'HH:mm')
+  const noon = new Date(solarNoonAt120E(date).getTime() + CWA_CITY_OFFSET_SEC[city] * 1000)
+  return format(convertToTaiwanTime(noon), 'HH:mm')
 }
 
 /**
  * 取得太陽過中的 Date 物件（UTC）
  */
 export function getSolarNoonDate(date: Date, city: CityName = 'taipei'): Date {
-  const { lat, lng } = CITY_COORDINATES[city]
-  return solarNoonRaw(date, lat, lng)
+  return new Date(solarNoonAt120E(date).getTime() + CWA_CITY_OFFSET_SEC[city] * 1000)
 }
 
 /**
