@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "佛教齋戒行事曆",
-  description: "農曆、佛菩薩紀念日、六齋日、長齋月、布薩日、每日過午時間",
+  description: "農曆、佛菩薩紀念日、齋日、布薩日、每日過午時間",
 };
 
 export default function RootLayout({

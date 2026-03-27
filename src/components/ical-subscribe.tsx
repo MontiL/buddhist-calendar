@@ -66,7 +66,7 @@ export function ICalSubscribe({ city }: ICalSubscribeProps) {
 
   const subscriptions = [
     toSubscriptionLinks('佛菩薩紀念日', '/api/ical/festivals', baseUrl),
-    toSubscriptionLinks('六齋日／長齋月', '/api/ical/fasting', baseUrl),
+    toSubscriptionLinks('齋日', '/api/ical/fasting', baseUrl),
     toSubscriptionLinks('布薩日', '/api/ical/posadha', baseUrl),
     toSubscriptionLinks(
       `過午時間（${CITY_NAMES_ZH[city]}）`,
