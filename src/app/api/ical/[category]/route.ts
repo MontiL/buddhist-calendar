@@ -124,7 +124,7 @@ export async function GET(
     headers: {
       'Content-Type': 'text/calendar; charset=utf-8',
       'Content-Disposition': `attachment; filename="${category}.ics"`,
-      'Cache-Control': 'max-age=3600, public',
+      'Cache-Control': 'max-age=60, public',
     },
   })
 }
