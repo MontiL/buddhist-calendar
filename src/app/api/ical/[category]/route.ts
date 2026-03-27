@@ -52,6 +52,10 @@ export async function GET(
     for (const e of buddhistEvents.filter(
       ev => ev.type === 'sixthDay' || ev.type === 'longFastMonth',
     )) {
+      const description =
+        e.type === 'sixthDay'
+          ? '農曆六齋日（初一、初八、十四、十五、二十三、三十）'
+          : '農曆長齋月（正月、五月、九月）'
       if (e.date) {
         const dtstart = formatICalDate(e.date)
         const dtend = formatICalDate(addDays(e.date, 1))
@@ -61,6 +65,7 @@ export async function GET(
           dtstart,
           dtend,
           allDay: true,
+          description,
         })
       } else if (e.start && e.end) {
         // longFastMonth spanning event
@@ -72,6 +77,7 @@ export async function GET(
           dtstart,
           dtend,
           allDay: true,
+          description,
         })
       }
     }
@@ -98,13 +104,15 @@ export async function GET(
       if (!e.date || !e.solarNoon) continue
       const dtstart = formatICalDate(e.date)
       const dtend = formatICalDate(addDays(e.date, 1))
+      const year = e.date.getFullYear()
+      const cwaUrl = `https://www.cwa.gov.tw/Data/astronomy/${year}suntr.pdf`
       icalEvents.push({
         uid: `${e.id}-${city}@buddhist-calendar`,
         summary: e.title,
         dtstart,
         dtend,
         allDay: true,
-        description: `過午時間：${e.solarNoon}`,
+        description: `過午時間：${e.solarNoon}\n過午時間由 suncalc 天文演算法計算，以CWA官方值校正（${cwaUrl}）；誤差 ±10 秒以內（嘉義較大）`,
       })
     }
   }
