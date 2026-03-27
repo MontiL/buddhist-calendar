@@ -124,6 +124,7 @@ export async function GET(
     headers: {
       'Content-Type': 'text/calendar; charset=utf-8',
       'Content-Disposition': `attachment; filename="${category}.ics"`,
+      // TODO: bump back to max-age=86400 (24h) once calendar names are stable
       'Cache-Control': 'max-age=60, public',
     },
   })
