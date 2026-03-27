@@ -49,8 +49,8 @@ export function ColorThemeToggle() {
     setColorTheme(theme)
   }
 
-  const currentColor =
-    COLOR_THEMES.find(t => t.value === colorTheme)?.color ?? '#18181b'
+  const currentTheme = COLOR_THEMES.find(t => t.value === colorTheme)
+  const iconColor = currentTheme?.value === 'default' ? undefined : currentTheme?.color
 
   return (
     <DropdownMenu>
@@ -58,7 +58,7 @@ export function ColorThemeToggle() {
         className="inline-flex size-8 items-center justify-center rounded-md border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
         aria-label="切換顏色主題"
       >
-        <PaletteIcon className="size-4" style={{ color: currentColor }} />
+        <PaletteIcon className="size-4" style={iconColor ? { color: iconColor } : undefined} />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuGroup>
@@ -73,8 +73,12 @@ export function ColorThemeToggle() {
               className="flex items-center gap-2"
             >
               <span
-                className="size-3.5 rounded-full border border-black/10 shrink-0"
-                style={{ backgroundColor: t.color }}
+                className="size-3.5 rounded-full border shrink-0"
+                style={
+                  t.value === 'default'
+                    ? { border: '1.5px solid currentColor', opacity: 0.5 }
+                    : { backgroundColor: t.color, border: '1px solid rgba(0,0,0,0.1)' }
+                }
               />
               {t.label}
               {colorTheme === t.value && (
