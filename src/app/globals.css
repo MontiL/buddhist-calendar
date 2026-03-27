@@ -65,6 +65,13 @@
 .fc-theme-standard th {
   border-color: var(--border);
 }
+.fc-theme-standard .fc-col-header-cell {
+  background-color: var(--muted);
+}
+.fc .fc-col-header-cell-cushion {
+  color: var(--foreground);
+  text-decoration: none;
+}
 .fc-theme-standard .fc-scrollgrid {
   border-color: var(--border);
 }
