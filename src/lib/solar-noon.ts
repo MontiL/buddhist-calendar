@@ -1,4 +1,4 @@
-import SunCalc from 'suncalc'
+import { Observer, SearchHourAngle, Body } from 'astronomy-engine'
 import { format } from 'date-fns'
 import { convertToTaiwanTime } from '@/lib/taiwan-time'
 
@@ -35,27 +35,37 @@ export const CITY_NAMES_ZH: Record<CityName, string> = {
   hengchun: '恆春',
 } as const
 
-// CWA 基準校正值：suncalc 計算值比 CWA 官方值平均晚約 75 秒
-const CWA_BASE_CORRECTION_MS = -75 * 1000
-
-// 城市層級校正值（秒），用於對齊 CWA 各城市官方值
-// 基於 2022-2026 五年資料計算的最佳校正值，校正後誤差可降至 ±10秒 以內
-const CITY_CORRECTION_SEC: Record<CityName, number> = {
-  taipei: 20,
-  hsinchu: -2,
-  taichung: 4,
-  nantou: -46,
-  tainan: 8,
-  kaohsiung: 5,
-  hualien: 5,
-  taitung: -3,
-  hengchun: 12,
-  penghu: 5,
-  chiayi: 0,
+/**
+ * 從任意 Date 提取台灣時區的日期元件（年、月、日）。
+ * 無論執行環境的系統時區為何，均以 Asia/Taipei 為準。
+ */
+function getTaiwanDateParts(date: Date): { year: number; month: number; day: number } {
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Taipei',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  })
+  const [y, m, d] = formatter.format(date).split('-').map(Number)
+  return { year: y, month: m - 1, day: d } // month 為 0-indexed，供 Date.UTC 使用
 }
 
-function getTotalCorrectionMs(city: CityName): number {
-  return CWA_BASE_CORRECTION_MS + CITY_CORRECTION_SEC[city] * 1000
+/**
+ * 計算指定日期、城市的太陽過中時刻（UTC Date）。
+ *
+ * 演算法：使用 astronomy-engine（基於 JPL DE421 星曆表），
+ * 內建 ΔT 修正，精度 < 2 秒。
+ * 以城市實際座標直接計算太陽時角為零（子午線過中）的時刻。
+ */
+function solarNoonRaw(date: Date, lat: number, lng: number): Date {
+  // 以台灣日期的 02:00 UTC（= 台灣時間 10:00）作為搜尋起點，
+  // 確保搜尋起點早於台灣最早的日中時刻（約 11:43 台灣時間）。
+  const { year, month, day } = getTaiwanDateParts(date)
+  const searchStart = new Date(Date.UTC(year, month, day, 2, 0, 0))
+
+  const observer = new Observer(lat, lng, 0)
+  const result = SearchHourAngle(Body.Sun, observer, 0, searchStart, 1)
+  return result.time.date
 }
 
 /**
@@ -63,35 +73,23 @@ function getTotalCorrectionMs(city: CityName): number {
  */
 export function getSolarNoon(date: Date, city: CityName = 'taipei'): string {
   const { lat, lng } = CITY_COORDINATES[city]
-  const times = SunCalc.getTimes(date, lat, lng)
-  const corrected = new Date(
-    times.solarNoon.getTime() + getTotalCorrectionMs(city),
-  )
-  return format(convertToTaiwanTime(corrected), 'HH:mm:ss')
+  return format(convertToTaiwanTime(solarNoonRaw(date, lat, lng)), 'HH:mm:ss')
 }
 
 /**
  * 計算指定日期和城市的太陽過中時間（HH:mm，無秒數）
  */
-export function getSolarNoonShort(
-  date: Date,
-  city: CityName = 'taipei',
-): string {
+export function getSolarNoonShort(date: Date, city: CityName = 'taipei'): string {
   const { lat, lng } = CITY_COORDINATES[city]
-  const times = SunCalc.getTimes(date, lat, lng)
-  const corrected = new Date(
-    times.solarNoon.getTime() + getTotalCorrectionMs(city),
-  )
-  return format(convertToTaiwanTime(corrected), 'HH:mm')
+  return format(convertToTaiwanTime(solarNoonRaw(date, lat, lng)), 'HH:mm')
 }
 
 /**
- * 取得太陽過中的 Date 物件（已校正至 CWA 官方值）
+ * 取得太陽過中的 Date 物件（UTC）
  */
 export function getSolarNoonDate(date: Date, city: CityName = 'taipei'): Date {
   const { lat, lng } = CITY_COORDINATES[city]
-  const times = SunCalc.getTimes(date, lat, lng)
-  return new Date(times.solarNoon.getTime() + getTotalCorrectionMs(city))
+  return solarNoonRaw(date, lat, lng)
 }
 
 /**
