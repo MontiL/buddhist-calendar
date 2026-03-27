@@ -5,7 +5,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ## Git Workflow
 
-**CRITICAL**: After any code changes, ALWAYS follow this sequence before committing:
+**CRITICAL**: After any code changes, ALWAYS follow this sequence automatically without waiting to be asked:
 
 1. **Check**: `pnpm check` (runs `tsc --noEmit`)
 2. **Commit**: Use Conventional Commits format
