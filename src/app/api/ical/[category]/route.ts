@@ -132,6 +132,7 @@ export async function GET(
     const city: CityName =
       rawCity in CITY_COORDINATES ? (rawCity as CityName) : 'taipei'
     const alarmMinutes = parseSolarAlarmMinutes(rawAlarm)
+    const cityZh = CITY_NAMES_ZH[city]
 
     const solarEvents = getSolarNoonEvents(start, end, city)
     for (const e of solarEvents) {
@@ -147,17 +148,17 @@ export async function GET(
                   new Date(getSolarNoonDate(e.date, city).getTime() - alarmMinutes * 60_000),
                 ),
                 absolute: true,
-                description: `過午時間 ${e.solarNoon}（${alarmMinutes} 分鐘前提醒）`,
+                description: `${cityZh}過午時間 ${e.solarNoon}（${alarmMinutes} 分鐘前提醒）`,
               },
             }
           : {}
       icalEvents.push({
         uid: `${e.id}-${city}@buddhist-calendar`,
-        summary: e.title,
+        summary: `${e.title}（${cityZh}）`,
         dtstart,
         dtend,
         allDay: true,
-        description: `過午時間：${e.solarNoon}\n採用 astronomy-engine（JPL DE421）計算，與中央氣象署官方值比對：99.6% 誤差 ≤3 秒，最大誤差 11 秒。\n詳細說明：https://buddhist-calendar.vercel.app/solar-noon`,
+        description: `${cityZh}過午時間：${e.solarNoon}\n採用 astronomy-engine（JPL DE421）計算，與中央氣象署官方值比對：99.6% 誤差 ≤3 秒，最大誤差 11 秒。\n詳細說明：https://buddhist-calendar.vercel.app/solar-noon`,
         ...alarm,
       })
     }
