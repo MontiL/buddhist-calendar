@@ -4,9 +4,14 @@ import {
   getBuddhistCalendarEvents,
   getSolarNoonEvents,
 } from '@/lib/lunar-utils'
-import { generateICalString, formatICalDate, type ICalEvent } from '@/lib/ical-utils'
+import {
+  generateICalString,
+  formatICalDate,
+  formatICalDateTime,
+  type ICalEvent,
+} from '@/lib/ical-utils'
 import type { CityName } from '@/lib/solar-noon'
-import { CITY_COORDINATES, CITY_NAMES_ZH } from '@/lib/solar-noon'
+import { CITY_COORDINATES, CITY_NAMES_ZH, getSolarNoonDate } from '@/lib/solar-noon'
 
 const CALENDAR_NAMES: Record<string, string> = {
   festivals: '佛菩薩紀念日',
@@ -16,6 +21,27 @@ const CALENDAR_NAMES: Record<string, string> = {
 }
 
 const VALID_CATEGORIES = Object.keys(CALENDAR_NAMES)
+
+const ALL_DAY_ALARM_RE = /^(-?)([01]\d|2[0-3])([0-5]\d)$/
+
+/**
+ * 全天事件的提醒參數：'HHMM' = 當天該時刻，'-HHMM' = 前一天該時刻。
+ * 相對 TRIGGER 以 DTSTART（當地午夜）為基準，回傳 'PT<n>M' 或 '-PT<n>M'；無效輸入回傳 null。
+ */
+function parseAllDayAlarmTrigger(raw: string | null): string | null {
+  if (!raw) return null
+  const m = ALL_DAY_ALARM_RE.exec(raw)
+  if (!m) return null
+  const minutes = Number(m[2]) * 60 + Number(m[3])
+  return m[1] === '-' ? `-PT${24 * 60 - minutes}M` : `PT${minutes}M`
+}
+
+/** 過午時間的提醒參數：日中前 N 分鐘（allowlist） */
+const SOLAR_ALARM_MINUTES = new Set(['15', '30', '60'])
+
+function parseSolarAlarmMinutes(raw: string | null): number | null {
+  return raw !== null && SOLAR_ALARM_MINUTES.has(raw) ? Number(raw) : null
+}
 
 export async function GET(
   request: NextRequest,
@@ -34,6 +60,8 @@ export async function GET(
 
   const buddhistEvents = getBuddhistCalendarEvents(start, end)
   const icalEvents: ICalEvent[] = []
+  const rawAlarm = searchParams.get('alarm')
+  const alarmTrigger = parseAllDayAlarmTrigger(rawAlarm)
 
   if (category === 'festivals') {
     for (const e of buddhistEvents.filter(e => e.type === 'festival')) {
@@ -46,6 +74,7 @@ export async function GET(
         dtstart,
         dtend,
         allDay: true,
+        ...(alarmTrigger ? { alarm: { trigger: alarmTrigger, description: e.title } } : {}),
       })
     }
   } else if (category === 'fasting') {
@@ -66,6 +95,7 @@ export async function GET(
           dtend,
           allDay: true,
           description,
+          ...(alarmTrigger ? { alarm: { trigger: alarmTrigger, description: e.title } } : {}),
         })
       } else if (e.start && e.end) {
         // longFastMonth spanning event
@@ -78,6 +108,8 @@ export async function GET(
           dtend,
           allDay: true,
           description,
+          // 跨月事件：提醒只在起始日觸發一次（提示齋月開始）
+          ...(alarmTrigger ? { alarm: { trigger: alarmTrigger, description: e.title } } : {}),
         })
       }
     }
@@ -92,18 +124,33 @@ export async function GET(
         dtstart,
         dtend,
         allDay: true,
+        ...(alarmTrigger ? { alarm: { trigger: alarmTrigger, description: e.title } } : {}),
       })
     }
   } else if (category === 'solar-noon') {
     const rawCity = searchParams.get('city') ?? 'taipei'
     const city: CityName =
       rawCity in CITY_COORDINATES ? (rawCity as CityName) : 'taipei'
+    const alarmMinutes = parseSolarAlarmMinutes(rawAlarm)
 
     const solarEvents = getSolarNoonEvents(start, end, city)
     for (const e of solarEvents) {
       if (!e.date || !e.solarNoon) continue
       const dtstart = formatICalDate(e.date)
       const dtend = formatICalDate(addDays(e.date, 1))
+      // 事件維持全天顯示，提醒用絕對時間 TRIGGER 對準日中前 N 分鐘
+      const alarm =
+        alarmMinutes !== null
+          ? {
+              alarm: {
+                trigger: formatICalDateTime(
+                  new Date(getSolarNoonDate(e.date, city).getTime() - alarmMinutes * 60_000),
+                ),
+                absolute: true,
+                description: `過午時間 ${e.solarNoon}（${alarmMinutes} 分鐘前提醒）`,
+              },
+            }
+          : {}
       icalEvents.push({
         uid: `${e.id}-${city}@buddhist-calendar`,
         summary: e.title,
@@ -111,6 +158,7 @@ export async function GET(
         dtend,
         allDay: true,
         description: `過午時間：${e.solarNoon}\n採用 astronomy-engine（JPL DE421）計算，與中央氣象署官方值比對：99.6% 誤差 ≤3 秒，最大誤差 11 秒。\n詳細說明：https://buddhist-calendar.vercel.app/solar-noon`,
+        ...alarm,
       })
     }
   }

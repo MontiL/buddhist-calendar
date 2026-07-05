@@ -2,6 +2,12 @@
  * RFC 5545 iCal 格式生成工具
  */
 
+export type ICalAlarm = {
+  trigger: string  // 相對：ISO 8601 duration（如 'PT420M'、'-PT180M'）；絕對：'YYYYMMDDTHHmmssZ'
+  absolute?: boolean  // trigger 為絕對 UTC 時間時設為 true
+  description: string
+}
+
 export type ICalEvent = {
   uid: string
   summary: string
@@ -9,6 +15,7 @@ export type ICalEvent = {
   dtend: string
   allDay: boolean
   description?: string
+  alarm?: ICalAlarm
 }
 
 function escapeIcal(str: string): string {
@@ -60,6 +67,17 @@ export function generateICalString(
     lines.push(foldLine(`DTEND${valueDatePrefix}:${event.dtend}`))
     if (event.description) {
       lines.push(foldLine(`DESCRIPTION:${escapeIcal(event.description)}`))
+    }
+    if (event.alarm) {
+      lines.push('BEGIN:VALARM')
+      lines.push('ACTION:DISPLAY')
+      lines.push(foldLine(`DESCRIPTION:${escapeIcal(event.alarm.description)}`))
+      lines.push(
+        event.alarm.absolute
+          ? `TRIGGER;VALUE=DATE-TIME:${event.alarm.trigger}`
+          : `TRIGGER;RELATED=START:${event.alarm.trigger}`,
+      )
+      lines.push('END:VALARM')
     }
     lines.push('END:VEVENT')
   }
