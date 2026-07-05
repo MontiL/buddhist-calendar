@@ -5,11 +5,23 @@ import {
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { CalendarIcon } from 'lucide-react'
+import { BellIcon, CalendarIcon } from 'lucide-react'
 import { CITY_NAMES_ZH, type CityName } from '@/lib/solar-noon'
+import {
+  ALL_DAY_ALARM_OPTIONS,
+  SOLAR_ALARM_OPTIONS,
+  useReminder,
+  type AllDayAlarm,
+  type SolarAlarm,
+} from '@/hooks/use-reminder'
 
 interface ICalSubscribeProps {
   city: CityName
@@ -57,7 +69,15 @@ function toSubscriptionLinks(
   }
 }
 
+function withAlarm(path: string, alarm: string): string {
+  if (alarm === 'off') return path
+  return `${path}${path.includes('?') ? '&' : '?'}alarm=${alarm}`
+}
+
 export function ICalSubscribe({ city }: ICalSubscribeProps) {
+  const { allDayAlarm, solarAlarm, updateAllDayAlarm, updateSolarAlarm } =
+    useReminder()
+
   // baseUrl is determined at runtime to support both local dev and production
   const baseUrl =
     typeof window !== 'undefined'
@@ -65,14 +85,14 @@ export function ICalSubscribe({ city }: ICalSubscribeProps) {
       : 'https://buddhist-calendar.vercel.app'
 
   const subscriptions = [
-    toSubscriptionLinks('齋日', '/api/ical/fasting', baseUrl),
+    toSubscriptionLinks('齋日', withAlarm('/api/ical/fasting', allDayAlarm), baseUrl),
     toSubscriptionLinks(
       `過午時間（${CITY_NAMES_ZH[city]}）`,
-      `/api/ical/solar-noon?city=${city}`,
+      withAlarm(`/api/ical/solar-noon?city=${city}`, solarAlarm),
       baseUrl,
     ),
-    toSubscriptionLinks('布薩日', '/api/ical/posadha', baseUrl),
-    toSubscriptionLinks('佛菩薩紀念日', '/api/ical/festivals', baseUrl),
+    toSubscriptionLinks('布薩日', withAlarm('/api/ical/posadha', allDayAlarm), baseUrl),
+    toSubscriptionLinks('佛菩薩紀念日', withAlarm('/api/ical/festivals', allDayAlarm), baseUrl),
   ]
 
   return (
@@ -93,6 +113,57 @@ export function ICalSubscribe({ city }: ICalSubscribeProps) {
             <SubscriptionLinks {...sub} />
           </DropdownMenuGroup>
         ))}
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>提醒設定</DropdownMenuLabel>
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>
+              <BellIcon className="size-3.5" />
+              齋日／布薩／紀念日
+              <span className="ml-auto pl-2 text-xs text-muted-foreground">
+                {ALL_DAY_ALARM_OPTIONS.find(o => o.value === allDayAlarm)?.label}
+              </span>
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent>
+              <DropdownMenuRadioGroup
+                value={allDayAlarm}
+                onValueChange={value => updateAllDayAlarm(value as AllDayAlarm)}
+              >
+                {ALL_DAY_ALARM_OPTIONS.map(option => (
+                  <DropdownMenuRadioItem key={option.value} value={option.value}>
+                    {option.label}
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>
+              <BellIcon className="size-3.5" />
+              過午時間
+              <span className="ml-auto pl-2 text-xs text-muted-foreground">
+                {SOLAR_ALARM_OPTIONS.find(o => o.value === solarAlarm)?.label}
+              </span>
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent>
+              <DropdownMenuRadioGroup
+                value={solarAlarm}
+                onValueChange={value => updateSolarAlarm(value as SolarAlarm)}
+              >
+                {SOLAR_ALARM_OPTIONS.map(option => (
+                  <DropdownMenuRadioItem key={option.value} value={option.value}>
+                    {option.label}
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+        </DropdownMenuGroup>
+        <p className="px-1.5 py-1 text-[11px] leading-4 text-muted-foreground">
+          提醒功能僅支援 Apple
+          行事曆等應用程式；Google 日曆不支援訂閱行事曆的提醒。Apple
+          行事曆請確認訂閱設定中未開啟「移除提示」。變更提醒設定後需重新訂閱才會生效。
+        </p>
       </DropdownMenuContent>
     </DropdownMenu>
   )
