@@ -11,7 +11,12 @@ import {
   type ICalEvent,
 } from '@/lib/ical-utils'
 import type { CityName } from '@/lib/solar-noon'
-import { CITY_COORDINATES, CITY_NAMES_ZH, getSolarNoonDate } from '@/lib/solar-noon'
+import {
+  CITY_COORDINATES,
+  CITY_NAMES_ZH,
+  getAllCitiesSolarNoonShort,
+  getSolarNoonDate,
+} from '@/lib/solar-noon'
 
 const CALENDAR_NAMES: Record<string, string> = {
   festivals: '佛菩薩紀念日',
@@ -34,6 +39,19 @@ function parseAllDayAlarmTrigger(raw: string | null): string | null {
   if (!m) return null
   const minutes = Number(m[2]) * 60 + Number(m[3])
   return m[1] === '-' ? `-PT${24 * 60 - minutes}M` : `PT${minutes}M`
+}
+
+/** 全部城市當日過午時間，兩城市一行（北到南），供事件描述使用 */
+function formatAllCitiesSolarNoon(date: Date): string {
+  const times = getAllCitiesSolarNoonShort(date)
+  const entries = (Object.keys(CITY_NAMES_ZH) as CityName[]).map(
+    city => `${CITY_NAMES_ZH[city]} ${times[city]}`,
+  )
+  const lines: string[] = []
+  for (let i = 0; i < entries.length; i += 2) {
+    lines.push(entries.slice(i, i + 2).join('｜'))
+  }
+  return lines.join('\n')
 }
 
 /** 過午時間的提醒參數：日中前 N 分鐘（allowlist） */
@@ -158,7 +176,7 @@ export async function GET(
         dtstart,
         dtend,
         allDay: true,
-        description: `${cityZh}過午時間：${e.solarNoon}\n採用 astronomy-engine（JPL DE421）計算，與中央氣象署官方值比對：99.6% 誤差 ≤3 秒，最大誤差 11 秒。\n詳細說明：https://buddhist-calendar.vercel.app/solar-noon`,
+        description: `${cityZh}過午時間：${e.solarNoon}\n\n各地過午時間：\n${formatAllCitiesSolarNoon(e.date)}\n\n採用 astronomy-engine（JPL DE421）計算，與中央氣象署官方值比對：99.6% 誤差 ≤3 秒，最大誤差 11 秒。\n詳細說明：https://buddhist-calendar.vercel.app/solar-noon`,
         ...alarm,
       })
     }

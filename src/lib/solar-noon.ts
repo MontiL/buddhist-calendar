@@ -101,6 +101,20 @@ export function getSolarNoonShort(date: Date, city: CityName = 'taipei'): string
 }
 
 /**
+ * 一次計算指定日期所有城市的過午時間（HH:mm），只做一次天文搜尋。
+ * 回傳順序同 CITY_NAMES_ZH（按緯度北到南）。
+ */
+export function getAllCitiesSolarNoonShort(date: Date): Record<CityName, string> {
+  const base = solarNoonAt120E(date).getTime()
+  return Object.fromEntries(
+    (Object.keys(CITY_NAMES_ZH) as CityName[]).map(city => [
+      city,
+      format(convertToTaiwanTime(new Date(base + CWA_CITY_OFFSET_SEC[city] * 1000)), 'HH:mm'),
+    ]),
+  ) as Record<CityName, string>
+}
+
+/**
  * 取得太陽過中的 Date 物件（UTC）
  */
 export function getSolarNoonDate(date: Date, city: CityName = 'taipei'): Date {
