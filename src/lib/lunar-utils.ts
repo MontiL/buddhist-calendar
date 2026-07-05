@@ -1,6 +1,6 @@
 import { eachDayOfInterval } from 'date-fns'
 import { Lunar, LunarMonth } from 'lunar-typescript'
-import { getSolarNoonShort, type CityName } from '@/lib/solar-noon'
+import { CITY_NAMES_ZH, getSolarNoonShort, type CityName } from '@/lib/solar-noon'
 
 // 佛菩薩紀念日定義（農曆）
 export const BUDDHIST_FESTIVALS = [
@@ -235,7 +235,7 @@ export const getSolarNoonEvents = (
     return {
       id: `solarNoon-${day.toISOString().split('T')[0]}`,
       date: day,
-      title: `⏰ ${solarNoon}`,
+      title: `⏰ ${solarNoon}（${CITY_NAMES_ZH[city]}）`,
       type: 'solarNoon' as const,
       backgroundColor: '#bae6fd',
       borderColor: '#38bdf8',

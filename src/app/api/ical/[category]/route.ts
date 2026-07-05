@@ -154,7 +154,7 @@ export async function GET(
           : {}
       icalEvents.push({
         uid: `${e.id}-${city}@buddhist-calendar`,
-        summary: `${e.title}（${cityZh}）`,
+        summary: e.title,
         dtstart,
         dtend,
         allDay: true,
