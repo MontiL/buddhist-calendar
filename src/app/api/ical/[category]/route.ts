@@ -164,7 +164,6 @@ export async function GET(
     }
   }
 
-  const calendarName = CALENDAR_NAMES[category]
   const cityName = category === 'solar-noon'
     ? CITY_NAMES_ZH[
         (searchParams.get('city') ?? 'taipei') in CITY_COORDINATES
@@ -172,6 +171,9 @@ export async function GET(
           : 'taipei'
       ]
     : undefined
+  const calendarName = cityName
+    ? `${CALENDAR_NAMES[category]}（${cityName}）`
+    : CALENDAR_NAMES[category]
   const calendarDesc = category === 'solar-noon'
     ? `佛教齋戒行事曆 — ${cityName}過午時間。採用 astronomy-engine（JPL DE421）計算，與中央氣象署官方值比對：99.6% 誤差 ≤3 秒，最大誤差 11 秒。詳細說明：https://buddhist-calendar.vercel.app/solar-noon`
     : undefined
