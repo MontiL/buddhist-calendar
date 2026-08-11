@@ -2,7 +2,7 @@
 
 import { Lunar } from 'lunar-typescript'
 
-import { lunarDayText } from '@/lib/lunar-utils'
+import { lunarCellText } from '@/lib/lunar-utils'
 
 interface DayCellContentProps {
   date: Date
@@ -10,7 +10,7 @@ interface DayCellContentProps {
 }
 
 export function DayCellContent({ date, dayNumber }: DayCellContentProps) {
-  const lunarText = lunarDayText(Lunar.fromDate(date))
+  const lunarText = lunarCellText(date, Lunar.fromDate(date))
 
   return (
     <div className="flex flex-col items-center leading-tight w-full">

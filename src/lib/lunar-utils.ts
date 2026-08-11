@@ -79,6 +79,19 @@ export const lunarMonthText = (lunar: Lunar): string =>
 export const lunarDayText = (lunar: Lunar): string =>
   `${lunarMonthText(lunar)}月${lunar.getDayInChinese()}`
 
+/**
+ * 月曆格內的農曆文字。
+ *
+ * 只在兩個錨點寫出月份：農曆初一（月界）與公曆每月 1 號（頁首）。
+ * 其餘只寫日，避免同一個月份名在版面上重複三十次。
+ * 少了公曆 1 號這個錨點，中位數而言每頁會有一半的日子無法判斷所屬農曆月，
+ * 且極少數月份（如 2033 年 2 月）整月不含初一，將完全沒有月份線索。
+ */
+export const lunarCellText = (date: Date, lunar: Lunar): string =>
+  lunar.getDay() === 1 || date.getDate() === 1
+    ? lunarDayText(lunar)
+    : lunar.getDayInChinese()
+
 export type LunarDayInfo = {
   text: string
   isSpecialDay: boolean

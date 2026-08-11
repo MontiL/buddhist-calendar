@@ -22,11 +22,20 @@ export function PrintMonthGrid({
   // 版面愈密，布薩只留符號，不印「白月布薩」四字
   const verbosePosadha = monthsPerPage <= 2
 
+  // 標題下的副標，兩段合佔一行
+  const notes: string[] = []
+  if (show.lunar) notes.push(month.lunarSpan)
+  if (show.fasting && month.hasLongFastMonth) notes.push('本月含長齋月')
+
   return (
     <div className="print-month">
       <h2 className="print-month-title">{month.title}</h2>
-      {show.fasting && month.hasLongFastMonth && (
-        <p className="print-month-note">本月含長齋月</p>
+      {notes.length > 0 && (
+        <p className="print-month-note">
+          {notes.map(note => (
+            <span key={note}>{note}</span>
+          ))}
+        </p>
       )}
 
       <div

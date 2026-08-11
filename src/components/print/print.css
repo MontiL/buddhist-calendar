@@ -11,6 +11,7 @@
   --day-font: 12pt;
   --lunar-font: 7.5pt;
   --mark-font: 7.5pt;
+  --note-font: 8.5pt;
   --legend-font: 7pt;
   --cell-pad: 1.4mm;
 
@@ -39,6 +40,7 @@
   --day-font: 9.5pt;
   --lunar-font: 6pt;
   --mark-font: 6pt;
+  --note-font: 7pt;
   --cell-pad: 1mm;
 }
 
@@ -47,6 +49,7 @@
   --day-font: 8pt;
   --lunar-font: 5.2pt;
   --mark-font: 5.2pt;
+  --note-font: 6pt;
   --legend-font: 6pt;
   --cell-pad: 0.7mm;
 }
@@ -56,6 +59,7 @@
   --day-font: 7.5pt;
   --lunar-font: 5pt;
   --mark-font: 5pt;
+  --note-font: 6pt;
   --legend-font: 6pt;
   --cell-pad: 0.7mm;
 }
@@ -101,10 +105,13 @@
 
 .print-month-note {
   font-family: var(--serif);
-  font-size: var(--legend-font);
+  font-size: var(--note-font);
   letter-spacing: 0.1em;
   color: var(--ink-soft);
-  text-align: center;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0 4mm;
   padding-bottom: 2mm;
   margin-top: -1.5mm;
 }
@@ -157,11 +164,13 @@
   border-bottom: 0;
 }
 
-/* 日期數字與農曆同列：省下一行高度，也貼近傳統月曆的排法 */
+/* 日期數字與農曆同列：省下一行高度，也貼近傳統月曆的排法。
+   錨點格（初一、每月 1 號）文字較長，窄格時讓農曆換到數字下方而非被截字。 */
 .print-cell-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
-  gap: 1mm;
+  gap: 0 1mm;
   min-width: 0;
 }
 

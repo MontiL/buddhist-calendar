@@ -6,7 +6,8 @@ import {
   isLongFastMonth,
   isPosadhaDay,
   isSixthDay,
-  lunarDayText,
+  lunarCellText,
+  lunarMonthText,
 } from '@/lib/lunar-utils'
 import { getSolarNoonShort, type CityName } from '@/lib/solar-noon'
 
@@ -92,7 +93,7 @@ export type PrintDay = {
   dayNumber: number
   /** 是否屬於本月（false 為前後月補格） */
   inMonth: boolean
-  /** 農曆日：初一顯示「六月初一」，其餘僅顯示「十五」 */
+  /** 農曆日：初一與公曆 1 號顯示「六月初一」，其餘僅顯示「十五」 */
   lunarText: string
   festival: string | null
   posadha: 'WHITE' | 'BLACK' | false
@@ -109,6 +110,8 @@ export type PrintMonth = {
   month: number
   /** 「二〇二六年 八月」 */
   title: string
+  /** 本月橫跨的農曆月，例「農曆六月・七月」（一個公曆月最多橫跨兩個農曆月） */
+  lunarSpan: string
   /** 本月是否含長齋月日子 */
   hasLongFastMonth: boolean
   /** 該月實際需要的週數 × 7 天（週日起，與站上 firstDay={0} 一致） */
@@ -148,6 +151,8 @@ export const buildPrintMonth = (
   const weekCount = Math.ceil((first.getDay() + daysInMonth) / 7)
 
   let hasLongFastMonth = false
+  // 本月出現過的農曆月名，依序去重（補格不計，故錨點必落在本月 1 號那格）
+  const lunarMonths: string[] = []
   const weeks: PrintDay[][] = []
 
   for (let w = 0; w < weekCount; w++) {
@@ -175,13 +180,14 @@ export const buildPrintMonth = (
       const longFast = isLongFastMonth(lunar)
       if (longFast) hasLongFastMonth = true
 
+      const monthName = lunarMonthText(lunar)
+      if (!lunarMonths.includes(monthName)) lunarMonths.push(monthName)
+
       week.push({
         date,
         dayNumber: date.getDate(),
         inMonth: true,
-        // 初一標出月份，其餘僅標日，避免格內文字擁擠
-        lunarText:
-          lunar.getDay() === 1 ? lunarDayText(lunar) : lunar.getDayInChinese(),
+        lunarText: lunarCellText(date, lunar),
         festival: getBuddhistFestival(lunar),
         posadha: isPosadhaDay(lunar),
         isSixthDay: isSixthDay(lunar),
@@ -197,6 +203,7 @@ export const buildPrintMonth = (
     year,
     month,
     title: printMonthTitle(year, month),
+    lunarSpan: `農曆${lunarMonths.map(name => `${name}月`).join('・')}`,
     hasLongFastMonth,
     weeks,
   }
