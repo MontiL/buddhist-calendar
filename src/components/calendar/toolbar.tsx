@@ -127,25 +127,25 @@ export function CalendarToolbar({
         <SwitchLabel
           label="佛菩薩紀念日"
           checked={toggles.festival}
-          color="bg-pink-200"
+          accent="var(--evt-festival-accent)"
           onChange={v => onToggle('festival', v)}
         />
         <SwitchLabel
           label="齋日"
           checked={toggles.fasting}
-          color="bg-yellow-200"
+          accent="var(--evt-fasting-accent)"
           onChange={v => onToggle('fasting', v)}
         />
         <SwitchLabel
           label="布薩日"
           checked={toggles.posadha}
-          color="bg-purple-200"
+          accent="var(--evt-posadha-accent)"
           onChange={v => onToggle('posadha', v)}
         />
         <SwitchLabel
           label="過午時間"
           checked={toggles.solarNoon}
-          color="bg-sky-200"
+          accent="var(--evt-noon-accent)"
           onChange={v => onToggle('solarNoon', v)}
         />
 
@@ -172,17 +172,21 @@ export function CalendarToolbar({
 function SwitchLabel({
   label,
   checked,
-  color,
+  accent,
   onChange,
 }: {
   label: string
   checked: boolean
-  color: string
+  /** 對應 globals.css 的事件識別色變數，與格內晶片同色 */
+  accent: string
   onChange: (v: boolean) => void
 }) {
   return (
     <label className="flex items-center gap-1.5 cursor-pointer select-none">
-      <div className={`size-2.5 rounded-full ${color}`} />
+      <div
+        className="size-2.5 rounded-full transition-opacity"
+        style={{ backgroundColor: accent, opacity: checked ? 1 : 0.35 }}
+      />
       <span className="text-sm">{label}</span>
       <Switch checked={checked} onCheckedChange={onChange} />
     </label>

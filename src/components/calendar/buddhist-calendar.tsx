@@ -18,6 +18,18 @@ import {
   type BuddhistCalendarEvent,
 } from '@/lib/lunar-utils'
 
+/**
+ * 事件顏色一律由 CSS 類別驅動（見 globals.css 的 --evt-* 語意變數），
+ * 不用 inline color，才能隨明暗／配色主題切換。
+ */
+const EVENT_CLASS: Record<BuddhistCalendarEvent['type'], string> = {
+  festival: 'evt-festival',
+  sixthDay: 'evt-fasting',
+  longFastMonth: 'evt-longfast',
+  posadha: 'evt-posadha',
+  solarNoon: 'evt-noon',
+}
+
 function toFcEvents(events: BuddhistCalendarEvent[]) {
   return events.map(e => ({
     id: e.id,
@@ -26,9 +38,7 @@ function toFcEvents(events: BuddhistCalendarEvent[]) {
     start: e.start,
     end: e.end,
     allDay: true,
-    backgroundColor: e.backgroundColor,
-    borderColor: e.borderColor,
-    textColor: e.textColor,
+    classNames: [EVENT_CLASS[e.type]],
     extendedProps: {
       type: e.type,
       subType: e.subType,
@@ -144,6 +154,7 @@ export function BuddhistCalendar() {
             <DayCellContent
               date={arg.date}
               dayNumber={arg.dayNumberText}
+              isToday={arg.isToday}
             />
           ) : null
         }

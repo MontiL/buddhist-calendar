@@ -18,12 +18,23 @@ const TYPE_LABELS: Record<string, string> = {
   solarNoon: '過午時間',
 }
 
-const TYPE_BADGE_CLASS: Record<string, string> = {
-  festival: 'bg-pink-100 text-pink-800 border-pink-300',
-  sixthDay: 'bg-yellow-100 text-yellow-800 border-yellow-300',
-  longFastMonth: 'bg-green-100 text-green-800 border-green-300',
-  posadha: 'bg-purple-100 text-purple-800 border-purple-300',
-  solarNoon: 'bg-sky-100 text-sky-800 border-sky-300',
+/** 與行事曆格內晶片共用同一組語意變數，明暗模式自動對應 */
+const TYPE_TOKEN: Record<string, string> = {
+  festival: 'festival',
+  sixthDay: 'fasting',
+  longFastMonth: 'longfast',
+  posadha: 'posadha',
+  solarNoon: 'noon',
+}
+
+function badgeStyle(type: string): React.CSSProperties | undefined {
+  const token = TYPE_TOKEN[type]
+  if (!token) return undefined
+  return {
+    backgroundColor: `var(--evt-${token}-bg)`,
+    color: `var(--evt-${token}-fg)`,
+    borderColor: `var(--evt-${token}-edge)`,
+  }
 }
 
 interface EventPopupProps {
@@ -50,10 +61,7 @@ export function EventPopup({ eventArg, onClose }: EventPopupProps) {
       <DialogContent className="max-w-sm">
         <DialogHeader>
           <div className="flex items-center gap-2 mb-1">
-            <Badge
-              variant="outline"
-              className={TYPE_BADGE_CLASS[type] ?? ''}
-            >
+            <Badge variant="outline" style={badgeStyle(type)}>
               {TYPE_LABELS[type] ?? type}
             </Badge>
           </div>

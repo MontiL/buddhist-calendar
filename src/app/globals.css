@@ -54,9 +54,26 @@
   --ring: oklch(0.702 0.183 293.541);
 }
 
-/* FullCalendar overrides */
+/* ---------------------------------------------------------------------------
+   行事曆色彩系統
+   每個事件類別四個角色：bg（底色）／fg（文字）／edge（框線）／accent（識別色）。
+   文字對底色一律 ≥ 6.7:1（AA 有餘、逼近 AAA），因為格內是 12px 中文小字。
+   色相間距（rose 12° / amber 80° / violet 295° / cyan 232°）足以在紅綠色盲下區辨。
+--------------------------------------------------------------------------- */
+.fc {
+  --fc-border-color: var(--border);
+  --fc-page-bg-color: var(--background);
+  --fc-neutral-bg-color: var(--muted);
+  --fc-today-bg-color: var(--cal-today-bg);
+  --fc-list-event-hover-bg-color: var(--accent);
+  --fc-event-bg-color: var(--muted);
+  --fc-event-border-color: var(--border);
+  --fc-event-text-color: var(--foreground);
+}
+
 .fc .fc-daygrid-day-number {
   padding: 0;
+  width: 100%;
 }
 .fc .fc-daygrid-day-top {
   justify-content: center;
@@ -65,18 +82,128 @@
 .fc-theme-standard th {
   border-color: var(--border);
 }
-.fc-theme-standard .fc-col-header-cell {
-  background-color: var(--muted);
-}
-.fc .fc-col-header-cell-cushion {
-  color: var(--foreground);
-  text-decoration: none;
-}
 .fc-theme-standard .fc-scrollgrid {
   border-color: var(--border);
 }
+
+/* 星期表頭：淡底 + 次要文字，不與格內事件搶視覺重量 */
+.fc-theme-standard .fc-col-header-cell {
+  background-color: var(--cal-header-bg);
+}
+.fc .fc-col-header-cell-cushion {
+  color: var(--cal-lunar-fg);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+/* 日期格 */
+.fc .fc-daygrid-day-frame {
+  min-height: 5.5rem;
+}
+.cal-day-num {
+  color: var(--cal-day-fg);
+}
+.cal-lunar {
+  color: var(--cal-lunar-fg);
+}
+/* 非本月：以底色下沉，而非 FullCalendar 預設的 opacity: .3（會直接毀掉對比） */
+.fc .fc-day-other .fc-daygrid-day-top {
+  opacity: 1;
+}
+.fc .fc-day-other {
+  background-color: var(--cal-other-bg);
+}
+.fc .fc-day-other .cal-day-num {
+  color: var(--cal-day-fg-other);
+  font-weight: 400;
+}
+.fc .fc-day-other .cal-lunar {
+  color: var(--cal-lunar-fg-other);
+}
+
+/* 今日：以主色圓章標示日期數字，整格僅極淡底色（取代 FullCalendar 的黃色塗抹） */
+.cal-day-num[data-today='true'] {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  border-radius: 999px;
+  padding-inline: 0.45rem;
+}
+
+/* 事件晶片：類別只負責宣告四個區域變數，樣式規則統一消費 */
+.fc .fc-event.evt-festival {
+  --e-bg: var(--evt-festival-bg);
+  --e-fg: var(--evt-festival-fg);
+  --e-edge: var(--evt-festival-edge);
+  --e-accent: var(--evt-festival-accent);
+}
+.fc .fc-event.evt-fasting {
+  --e-bg: var(--evt-fasting-bg);
+  --e-fg: var(--evt-fasting-fg);
+  --e-edge: var(--evt-fasting-edge);
+  --e-accent: var(--evt-fasting-accent);
+}
+.fc .fc-event.evt-longfast {
+  --e-bg: var(--evt-longfast-bg);
+  --e-fg: var(--evt-longfast-fg);
+  --e-edge: var(--evt-longfast-edge);
+  --e-accent: var(--evt-longfast-accent);
+}
+.fc .fc-event.evt-posadha {
+  --e-bg: var(--evt-posadha-bg);
+  --e-fg: var(--evt-posadha-fg);
+  --e-edge: var(--evt-posadha-edge);
+  --e-accent: var(--evt-posadha-accent);
+}
+.fc .fc-event.evt-noon {
+  --e-bg: var(--evt-noon-bg);
+  --e-fg: var(--evt-noon-fg);
+  --e-edge: var(--evt-noon-edge);
+  --e-accent: var(--evt-noon-accent);
+}
+
+.fc .fc-daygrid-event {
+  background-color: var(--e-bg);
+  border: 1px solid var(--e-edge);
+  border-left: 3px solid var(--e-accent);
+  border-radius: var(--radius-sm);
+  color: var(--e-fg);
+  padding: 0.05rem 0.35rem;
+  margin-block: 1px;
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+.fc .fc-daygrid-event .fc-event-main,
+.fc .fc-daygrid-event .fc-event-title {
+  color: inherit;
+  font-weight: 500;
+}
+/* 過午時間天天都有，屬環境資訊：底色更淡、不加粗識別條，讓真正的節日跳出來 */
+.fc .fc-daygrid-event.evt-noon {
+  border-left-width: 1px;
+}
+.fc .fc-daygrid-event.evt-noon .fc-event-main,
+.fc .fc-daygrid-event.evt-noon .fc-event-title {
+  font-weight: 400;
+}
+.fc .fc-daygrid-event:hover {
+  box-shadow: inset 0 0 0 1px var(--e-accent);
+  cursor: pointer;
+}
+.fc .fc-daygrid-event:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
+.fc .fc-daygrid-event:focus::after {
+  display: none;
+}
+/* 非本月的事件同樣降階；0.85 是淡化後文字仍守住 AA（4.8:1）的下限 */
+.fc .fc-day-other .fc-daygrid-event {
+  opacity: 0.85;
+}
+
+/* 列表檢視 */
 .fc .fc-list-day-cushion {
-  background-color: var(--muted);
+  background-color: var(--cal-header-bg);
 }
 .fc .fc-list-day-text,
 .fc .fc-list-day-side-text,
@@ -84,6 +211,12 @@
 .fc .fc-list-day-side-text a {
   color: var(--foreground);
   text-decoration: none;
+}
+.fc .fc-list-event-dot {
+  border-color: var(--e-accent);
+}
+.fc .fc-list-event-title a {
+  color: var(--foreground);
 }
 .fc .fc-list-event:hover td {
   background-color: var(--accent);
@@ -169,6 +302,41 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* 行事曆格線文字（亮色）：農曆字 7.1:1，非本月 4.6:1 以上 */
+  --cal-day-fg: oklch(0.205 0 0);
+  --cal-lunar-fg: oklch(0.46 0 0);
+  --cal-other-bg: oklch(0.976 0 0);
+  --cal-day-fg-other: oklch(0.52 0 0);
+  --cal-lunar-fg-other: oklch(0.545 0 0);
+  --cal-header-bg: oklch(0.985 0 0);
+  --cal-today-bg: color-mix(in oklab, var(--primary) 5%, var(--background));
+
+  /* 佛菩薩紀念日 —— rose */
+  --evt-festival-bg: oklch(0.955 0.019 12);
+  --evt-festival-fg: oklch(0.44 0.15 12);
+  --evt-festival-edge: oklch(0.885 0.06 12);
+  --evt-festival-accent: oklch(0.6 0.19 12);
+  /* 六齋日 —— amber */
+  --evt-fasting-bg: oklch(0.962 0.038 85);
+  --evt-fasting-fg: oklch(0.45 0.088 70);
+  --evt-fasting-edge: oklch(0.875 0.095 85);
+  --evt-fasting-accent: oklch(0.6 0.125 78);
+  /* 長齋月 —— 同屬齋戒家族，以較深的 amber 與六齋日分層 */
+  --evt-longfast-bg: oklch(0.905 0.072 78);
+  --evt-longfast-fg: oklch(0.4 0.085 62);
+  --evt-longfast-edge: oklch(0.82 0.1 78);
+  --evt-longfast-accent: oklch(0.55 0.11 70);
+  /* 布薩日 —— violet（月相） */
+  --evt-posadha-bg: oklch(0.953 0.021 295);
+  --evt-posadha-fg: oklch(0.45 0.155 295);
+  --evt-posadha-edge: oklch(0.885 0.055 295);
+  --evt-posadha-accent: oklch(0.58 0.18 295);
+  /* 過午時間 —— cyan */
+  --evt-noon-bg: oklch(0.972 0.017 232);
+  --evt-noon-fg: oklch(0.45 0.085 232);
+  --evt-noon-edge: oklch(0.905 0.045 232);
+  --evt-noon-accent: oklch(0.6 0.112 232);
 }
 
 .dark {
@@ -203,6 +371,37 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+
+  /* 行事曆格線文字（深色）：農曆字 9.4:1，非本月 5.1:1 以上 */
+  --cal-day-fg: oklch(0.97 0 0);
+  --cal-lunar-fg: oklch(0.765 0 0);
+  --cal-other-bg: oklch(0.185 0 0);
+  --cal-day-fg-other: oklch(0.66 0 0);
+  --cal-lunar-fg-other: oklch(0.62 0 0);
+  --cal-header-bg: oklch(0.205 0 0);
+  --cal-today-bg: color-mix(in oklab, var(--primary) 6%, var(--background));
+
+  /* 深色模式不沿用亮色淺底 —— 改為低亮度色調底 + 高亮文字，避免整片色塊發光刺眼 */
+  --evt-festival-bg: oklch(0.295 0.055 12);
+  --evt-festival-fg: oklch(0.87 0.07 12);
+  --evt-festival-edge: oklch(0.44 0.095 12);
+  --evt-festival-accent: oklch(0.7 0.15 12);
+  --evt-fasting-bg: oklch(0.298 0.048 80);
+  --evt-fasting-fg: oklch(0.89 0.075 88);
+  --evt-fasting-edge: oklch(0.45 0.075 80);
+  --evt-fasting-accent: oklch(0.79 0.13 80);
+  --evt-longfast-bg: oklch(0.365 0.055 78);
+  --evt-longfast-fg: oklch(0.9 0.075 88);
+  --evt-longfast-edge: oklch(0.5 0.08 78);
+  --evt-longfast-accent: oklch(0.75 0.12 78);
+  --evt-posadha-bg: oklch(0.305 0.058 295);
+  --evt-posadha-fg: oklch(0.87 0.07 295);
+  --evt-posadha-edge: oklch(0.45 0.095 295);
+  --evt-posadha-accent: oklch(0.72 0.14 295);
+  --evt-noon-bg: oklch(0.275 0.038 232);
+  --evt-noon-fg: oklch(0.85 0.055 232);
+  --evt-noon-edge: oklch(0.42 0.07 232);
+  --evt-noon-accent: oklch(0.72 0.11 232);
 }
 
 @layer base {

@@ -139,9 +139,6 @@ export type BuddhistCalendarEvent = {
   title: string
   type: 'posadha' | 'festival' | 'sixthDay' | 'longFastMonth' | 'solarNoon'
   subType?: 'WHITE' | 'BLACK'
-  backgroundColor: string
-  borderColor: string
-  textColor: string
   solarNoon?: string
   isFastingDay?: boolean
 }
@@ -174,9 +171,6 @@ export const getBuddhistCalendarEvents = (
         title: posadha === 'WHITE' ? '白月布薩' : '黑月布薩',
         type: 'posadha',
         subType: posadha,
-        backgroundColor: '#c4b5fd',
-        borderColor: '#a78bfa',
-        textColor: '#5b21b6',
       })
     }
 
@@ -188,9 +182,6 @@ export const getBuddhistCalendarEvents = (
         date: day,
         title: festival,
         type: 'festival',
-        backgroundColor: '#fbcfe8',
-        borderColor: '#f472b6',
-        textColor: '#9d174d',
       })
     }
 
@@ -214,9 +205,6 @@ export const getBuddhistCalendarEvents = (
         date: day,
         title: '六齋日',
         type: 'sixthDay',
-        backgroundColor: '#fef08a',
-        borderColor: '#facc15',
-        textColor: '#854d0e',
         isFastingDay: true,
       })
     }
@@ -232,9 +220,6 @@ export const getBuddhistCalendarEvents = (
       end: exclusiveEnd,
       title: '長齋月',
       type: 'longFastMonth',
-      backgroundColor: '#bbf7d0',
-      borderColor: '#4ade80',
-      textColor: '#166534',
     })
   })
 
@@ -258,9 +243,6 @@ export const getSolarNoonEvents = (
       date: day,
       title: `⏰ ${solarNoon}（${CITY_NAMES_ZH[city]}）`,
       type: 'solarNoon' as const,
-      backgroundColor: '#bae6fd',
-      borderColor: '#38bdf8',
-      textColor: '#0c4a6e',
       solarNoon,
     }
   })
