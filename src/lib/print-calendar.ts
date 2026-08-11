@@ -108,7 +108,7 @@ export type PrintMonth = {
   year: number
   /** 1-12 */
   month: number
-  /** 「二〇二六年 八月」 */
+  /** 「2026年 8月」 */
   title: string
   /** 本月橫跨的農曆月，例「農曆六月・七月」（一個公曆月最多橫跨兩個農曆月） */
   lunarSpan: string
@@ -118,20 +118,8 @@ export type PrintMonth = {
   weeks: PrintDay[][]
 }
 
-const CN_DIGITS = ['〇', '一', '二', '三', '四', '五', '六', '七', '八', '九']
-const CN_MONTHS = [
-  '一月', '二月', '三月', '四月', '五月', '六月',
-  '七月', '八月', '九月', '十月', '十一月', '十二月',
-]
-
-const toChineseYear = (year: number): string =>
-  String(year)
-    .split('')
-    .map(d => CN_DIGITS[Number(d)])
-    .join('')
-
 export const printMonthTitle = (year: number, month: number): string =>
-  `${toChineseYear(year)}年 ${CN_MONTHS[month - 1]}`
+  `${year}年 ${month}月`
 
 /**
  * 建構單一月份的列印資料。
