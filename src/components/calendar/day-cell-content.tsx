@@ -2,14 +2,15 @@
 
 import { Lunar } from 'lunar-typescript'
 
+import { lunarDayText } from '@/lib/lunar-utils'
+
 interface DayCellContentProps {
   date: Date
   dayNumber: string
 }
 
 export function DayCellContent({ date, dayNumber }: DayCellContentProps) {
-  const lunar = Lunar.fromDate(date)
-  const lunarText = `${lunar.getMonthInChinese().replace('腊', '臘')}月${lunar.getDayInChinese()}`
+  const lunarText = lunarDayText(Lunar.fromDate(date))
 
   return (
     <div className="flex flex-col items-center leading-tight w-full">

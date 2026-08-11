@@ -71,6 +71,14 @@ export const getBuddhistFestival = (lunar: Lunar): string | null => {
   return festival?.name ?? null
 }
 
+// 農曆月名（正、二…冬、臘；閏月冠「閏」）
+export const lunarMonthText = (lunar: Lunar): string =>
+  lunar.getMonthInChinese().replace('腊', '臘').replace('闰', '閏')
+
+// 農曆日期全稱，例：六月十五
+export const lunarDayText = (lunar: Lunar): string =>
+  `${lunarMonthText(lunar)}月${lunar.getDayInChinese()}`
+
 export type LunarDayInfo = {
   text: string
   isSpecialDay: boolean
@@ -99,7 +107,7 @@ export const getLunarInfo = (date: Date | null): LunarDayInfo | null => {
   }
 
   return {
-    text: `${lunar.getMonthInChinese().replace('腊', '臘')}月${lunar.getDayInChinese()}`,
+    text: lunarDayText(lunar),
     isSpecialDay: isSixthDayDate || isLongFastMonthDate,
     specialDayText,
     lunar,

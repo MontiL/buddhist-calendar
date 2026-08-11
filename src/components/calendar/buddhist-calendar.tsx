@@ -55,11 +55,14 @@ export function BuddhistCalendar() {
     start: Date
     end: Date
   } | null>(null)
+  // 檢視所屬月份（不含前後月補格），供列印連結使用
+  const [currentMonth, setCurrentMonth] = useState<Date | null>(null)
   const [clickedEvent, setClickedEvent] = useState<EventClickArg | null>(null)
 
   const handleDatesSet = useCallback((arg: DatesSetArg) => {
     setTitle(arg.view.title)
     setVisibleRange({ start: arg.start, end: arg.end })
+    setCurrentMonth(arg.view.currentStart)
   }, [])
 
   const api = (): CalendarApi | undefined =>
@@ -113,6 +116,7 @@ export function BuddhistCalendar() {
         view={view}
         toggles={toggles}
         city={city}
+        currentMonth={currentMonth}
         onPrev={handlePrev}
         onNext={handleNext}
         onToday={handleToday}

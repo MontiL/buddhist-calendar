@@ -1,0 +1,317 @@
+/*
+ * 列印月曆樣式 —— 純墨線黑白。
+ *
+ * 刻意不使用主題 token（--foreground 等）：紙張輸出必須恆為白底黑字，
+ * 不因網站的深色模式或配色主題而改變。
+ */
+
+.print-sheet {
+  /* 版面密度變數，由 monthsPerPage 覆寫 */
+  --title-font: 20pt;
+  --day-font: 12pt;
+  --lunar-font: 7.5pt;
+  --mark-font: 7.5pt;
+  --legend-font: 7pt;
+  --cell-pad: 1.4mm;
+
+  --ink: #1a1a1a;
+  --ink-soft: #666;
+  --ink-faint: #bbb;
+  --rule: #c8c8c8;
+  --rule-strong: #1a1a1a;
+
+  --serif: "Songti TC", "Songti SC", "Noto Serif CJK TC", "Noto Serif TC",
+    "PMingLiU", serif;
+
+  width: var(--sheet-w);
+  height: var(--sheet-h);
+  background: #fff;
+  color: var(--ink);
+  box-sizing: border-box;
+  padding: 12mm 12mm 9mm;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.print-sheet[data-per="2"] {
+  --title-font: 15pt;
+  --day-font: 9.5pt;
+  --lunar-font: 6pt;
+  --mark-font: 6pt;
+  --cell-pad: 1mm;
+}
+
+.print-sheet[data-per="3"] {
+  --title-font: 12.5pt;
+  --day-font: 8pt;
+  --lunar-font: 5.2pt;
+  --mark-font: 5.2pt;
+  --legend-font: 6pt;
+  --cell-pad: 0.7mm;
+}
+
+.print-sheet[data-per="4"] {
+  --title-font: 12pt;
+  --day-font: 7.5pt;
+  --lunar-font: 5pt;
+  --mark-font: 5pt;
+  --legend-font: 6pt;
+  --cell-pad: 0.7mm;
+}
+
+/* 高密度版面：行距收緊，過午時間緊接內容而非貼齊格底 */
+.print-sheet[data-per="3"] .print-cell,
+.print-sheet[data-per="4"] .print-cell {
+  line-height: 1.15;
+  gap: 0.15mm;
+}
+
+.print-sheet[data-per="3"] .print-noon,
+.print-sheet[data-per="4"] .print-noon {
+  margin-top: 0;
+}
+
+/* ---------------- 月份排列 ---------------- */
+
+.print-months {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  gap: 7mm;
+  grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+  grid-template-rows: repeat(var(--rows), minmax(0, 1fr));
+}
+
+.print-month {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.print-month-title {
+  font-family: var(--serif);
+  font-size: var(--title-font);
+  font-weight: 400;
+  letter-spacing: 0.18em;
+  text-align: center;
+  padding-bottom: 2.5mm;
+  margin: 0;
+}
+
+.print-month-note {
+  font-family: var(--serif);
+  font-size: var(--legend-font);
+  letter-spacing: 0.1em;
+  color: var(--ink-soft);
+  text-align: center;
+  padding-bottom: 2mm;
+  margin-top: -1.5mm;
+}
+
+/* ---------------- 日期格線 ---------------- */
+
+.print-grid {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-template-rows: auto repeat(var(--weeks, 6), minmax(0, 1fr));
+  border: 0.6pt solid var(--rule-strong);
+}
+
+.print-weekday {
+  font-family: var(--serif);
+  font-size: var(--mark-font);
+  letter-spacing: 0.2em;
+  text-indent: 0.2em;
+  text-align: center;
+  padding: 1.1mm 0;
+  border-bottom: 0.6pt solid var(--rule-strong);
+  border-right: 0.4pt solid var(--rule);
+}
+
+.print-weekday:nth-child(7) {
+  border-right: 0;
+}
+
+.print-cell {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  padding: var(--cell-pad);
+  display: flex;
+  flex-direction: column;
+  gap: 0.3mm;
+  border-right: 0.4pt solid var(--rule);
+  border-bottom: 0.4pt solid var(--rule);
+  line-height: 1.25;
+}
+
+/* 每列最後一格不畫右框；最後一列不畫下框 */
+.print-cell:nth-child(7n) {
+  border-right: 0;
+}
+
+.print-cell:nth-last-child(-n + 7) {
+  border-bottom: 0;
+}
+
+/* 日期數字與農曆同列：省下一行高度，也貼近傳統月曆的排法 */
+.print-cell-head {
+  display: flex;
+  align-items: baseline;
+  gap: 1mm;
+  min-width: 0;
+}
+
+.print-cell-day {
+  font-size: var(--day-font);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.print-cell.is-out .print-cell-day {
+  color: var(--ink-faint);
+  font-weight: 400;
+}
+
+.print-cell-lunar {
+  font-family: var(--serif);
+  font-size: var(--lunar-font);
+  color: var(--ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.print-marks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.8mm;
+  font-size: var(--mark-font);
+}
+
+.print-mark-moon {
+  font-size: calc(var(--mark-font) * 1.1);
+  line-height: 1;
+}
+
+.print-mark-tag {
+  font-family: var(--serif);
+  font-size: var(--mark-font);
+  line-height: 1;
+  padding: 0.3mm 0.5mm;
+  border: 0.3pt solid #999;
+}
+
+.print-mark-text {
+  font-family: var(--serif);
+  font-size: var(--mark-font);
+}
+
+.print-festival {
+  font-family: var(--serif);
+  font-size: var(--mark-font);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.print-noon {
+  margin-top: auto;
+  padding-top: 0.4mm;
+  font-size: var(--mark-font);
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------- 頁尾圖例 ---------------- */
+
+.print-legend {
+  flex: none;
+  margin-top: 5mm;
+  padding-top: 1.8mm;
+  border-top: 0.4pt solid var(--rule);
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6mm;
+  font-family: var(--serif);
+  font-size: var(--legend-font);
+  color: var(--ink-soft);
+}
+
+.print-legend-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 4mm;
+}
+
+.print-legend-source {
+  white-space: nowrap;
+}
+
+/* ---------------- 螢幕預覽 ---------------- */
+
+@media screen {
+  .print-sheet-frame {
+    /* 佔位尺寸須跟著縮放，否則捲動區域會留下大片空白 */
+    width: calc(var(--sheet-w) * var(--preview-scale));
+    height: calc(var(--sheet-h) * var(--preview-scale));
+    margin: 0 auto;
+  }
+
+  .print-sheet {
+    transform: scale(var(--preview-scale));
+    transform-origin: top left;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.16), 0 6px 20px rgb(0 0 0 / 0.1);
+  }
+}
+
+/* ---------------- 列印 ---------------- */
+
+@media print {
+  html,
+  body {
+    background: #fff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-layout,
+  .print-preview-area,
+  .print-sheets {
+    display: block !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    gap: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    background: #fff !important;
+  }
+
+  .print-sheet-frame {
+    width: auto !important;
+    height: auto !important;
+    margin: 0 !important;
+    break-after: page;
+  }
+
+  .print-sheet-frame:last-child {
+    break-after: auto;
+  }
+
+  .print-sheet {
+    transform: none !important;
+    box-shadow: none !important;
+    /* 高度扣掉一絲，避免捨入誤差把每張紙後面擠出一頁空白 */
+    height: calc(var(--sheet-h) - 0.2mm) !important;
+    break-inside: avoid;
+  }
+}

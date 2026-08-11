@@ -1,0 +1,205 @@
+import { addDays, startOfMonth } from 'date-fns'
+import { Lunar } from 'lunar-typescript'
+
+import {
+  getBuddhistFestival,
+  isLongFastMonth,
+  isPosadhaDay,
+  isSixthDay,
+  lunarDayText,
+} from '@/lib/lunar-utils'
+import { getSolarNoonShort, type CityName } from '@/lib/solar-noon'
+
+/* ------------------------------------------------------------------ */
+/* 版面設定型別                                                         */
+/* ------------------------------------------------------------------ */
+
+export type PaperSize = 'A4' | 'A3' | 'B5' | 'Letter'
+export type Orientation = 'portrait' | 'landscape'
+export type MonthsPerPage = 1 | 2 | 3 | 4
+
+/** 紙張尺寸（直向 mm）。橫向時交換寬高。 */
+export const PAPER_MM: Record<PaperSize, { w: number; h: number; label: string }> = {
+  A4: { w: 210, h: 297, label: 'A4（210 × 297 mm）' },
+  A3: { w: 297, h: 420, label: 'A3（297 × 420 mm）' },
+  B5: { w: 176, h: 250, label: 'B5（176 × 250 mm）' },
+  Letter: { w: 216, h: 279, label: 'Letter（216 × 279 mm）' },
+}
+
+export const PAPER_SIZES = Object.keys(PAPER_MM) as PaperSize[]
+
+/** 取得實際輸出尺寸（已套用紙張方向）。 */
+export const paperDimensions = (
+  paper: PaperSize,
+  orientation: Orientation,
+): { w: number; h: number } => {
+  const { w, h } = PAPER_MM[paper]
+  return orientation === 'landscape' ? { w: h, h: w } : { w, h }
+}
+
+/** 可列印的內容項目。 */
+export type PrintContent = {
+  lunar: boolean
+  festival: boolean
+  fasting: boolean
+  posadha: boolean
+  solarNoon: boolean
+}
+
+/* ------------------------------------------------------------------ */
+/* 月份鍵值：'YYYY-MM'                                                  */
+/* ------------------------------------------------------------------ */
+
+export type MonthKey = string
+
+export const monthKey = (year: number, month: number): MonthKey =>
+  `${year}-${String(month).padStart(2, '0')}`
+
+export const parseMonthKey = (key: MonthKey): { year: number; month: number } => {
+  const [year, month] = key.split('-').map(Number)
+  return { year, month }
+}
+
+/** 產生 from ~ to 之間（含頭尾）的所有月份鍵值；順序顛倒時自動交換。 */
+export const monthKeyRange = (from: MonthKey, to: MonthKey): MonthKey[] => {
+  const [lo, hi] = from <= to ? [from, to] : [to, from]
+  const start = parseMonthKey(lo)
+  const end = parseMonthKey(hi)
+
+  const keys: MonthKey[] = []
+  let { year, month } = start
+  while (year < end.year || (year === end.year && month <= end.month)) {
+    keys.push(monthKey(year, month))
+    month += 1
+    if (month > 12) {
+      month = 1
+      year += 1
+    }
+  }
+  return keys
+}
+
+/** 依年月排序（字串比較即可，因為月份已補零）。 */
+export const sortMonthKeys = (keys: Iterable<MonthKey>): MonthKey[] =>
+  [...keys].sort()
+
+/* ------------------------------------------------------------------ */
+/* 月曆資料                                                            */
+/* ------------------------------------------------------------------ */
+
+export type PrintDay = {
+  date: Date
+  dayNumber: number
+  /** 是否屬於本月（false 為前後月補格） */
+  inMonth: boolean
+  /** 農曆日：初一顯示「六月初一」，其餘僅顯示「十五」 */
+  lunarText: string
+  festival: string | null
+  posadha: 'WHITE' | 'BLACK' | false
+  isSixthDay: boolean
+  isLongFastMonth: boolean
+  /** 過午時刻 HH:mm */
+  solarNoon: string
+}
+
+export type PrintMonth = {
+  key: MonthKey
+  year: number
+  /** 1-12 */
+  month: number
+  /** 「二〇二六年 八月」 */
+  title: string
+  /** 本月是否含長齋月日子 */
+  hasLongFastMonth: boolean
+  /** 該月實際需要的週數 × 7 天（週日起，與站上 firstDay={0} 一致） */
+  weeks: PrintDay[][]
+}
+
+const CN_DIGITS = ['〇', '一', '二', '三', '四', '五', '六', '七', '八', '九']
+const CN_MONTHS = [
+  '一月', '二月', '三月', '四月', '五月', '六月',
+  '七月', '八月', '九月', '十月', '十一月', '十二月',
+]
+
+const toChineseYear = (year: number): string =>
+  String(year)
+    .split('')
+    .map(d => CN_DIGITS[Number(d)])
+    .join('')
+
+export const printMonthTitle = (year: number, month: number): string =>
+  `${toChineseYear(year)}年 ${CN_MONTHS[month - 1]}`
+
+/**
+ * 建構單一月份的列印資料。
+ *
+ * 只產生該月實際需要的週數（4～6 列），避免整列空白格佔掉版面；
+ * 落在本月之外的格子仍會標記日期數字，但不帶任何佛曆內容。
+ */
+export const buildPrintMonth = (
+  year: number,
+  month: number,
+  city: CityName,
+): PrintMonth => {
+  const first = startOfMonth(new Date(year, month - 1, 1))
+  // 回推到該週的週日
+  const gridStart = addDays(first, -first.getDay())
+  const daysInMonth = new Date(year, month, 0).getDate()
+  const weekCount = Math.ceil((first.getDay() + daysInMonth) / 7)
+
+  let hasLongFastMonth = false
+  const weeks: PrintDay[][] = []
+
+  for (let w = 0; w < weekCount; w++) {
+    const week: PrintDay[] = []
+    for (let d = 0; d < 7; d++) {
+      const date = addDays(gridStart, w * 7 + d)
+      const inMonth = date.getMonth() === month - 1 && date.getFullYear() === year
+
+      if (!inMonth) {
+        week.push({
+          date,
+          dayNumber: date.getDate(),
+          inMonth: false,
+          lunarText: '',
+          festival: null,
+          posadha: false,
+          isSixthDay: false,
+          isLongFastMonth: false,
+          solarNoon: '',
+        })
+        continue
+      }
+
+      const lunar = Lunar.fromDate(date)
+      const longFast = isLongFastMonth(lunar)
+      if (longFast) hasLongFastMonth = true
+
+      week.push({
+        date,
+        dayNumber: date.getDate(),
+        inMonth: true,
+        // 初一標出月份，其餘僅標日，避免格內文字擁擠
+        lunarText:
+          lunar.getDay() === 1 ? lunarDayText(lunar) : lunar.getDayInChinese(),
+        festival: getBuddhistFestival(lunar),
+        posadha: isPosadhaDay(lunar),
+        isSixthDay: isSixthDay(lunar),
+        isLongFastMonth: longFast,
+        solarNoon: getSolarNoonShort(date, city),
+      })
+    }
+    weeks.push(week)
+  }
+
+  return {
+    key: monthKey(year, month),
+    year,
+    month,
+    title: printMonthTitle(year, month),
+    hasLongFastMonth,
+    weeks,
+  }
+}
+
+export const WEEKDAY_LABELS = ['日', '一', '二', '三', '四', '五', '六'] as const

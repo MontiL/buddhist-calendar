@@ -7,8 +7,10 @@ import { ICalSubscribe } from '@/components/ical-subscribe'
 import { ModeToggle } from '@/components/mode-toggle'
 import { ColorThemeToggle } from '@/components/color-theme-toggle'
 import { Button } from '@/components/ui/button'
-import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react'
+import { ChevronLeftIcon, ChevronRightIcon, PrinterIcon } from 'lucide-react'
+import Link from 'next/link'
 import type { CityName } from '@/lib/solar-noon'
+import { monthKey } from '@/lib/print-calendar'
 
 export type CalendarView = 'dayGridMonth' | 'listMonth'
 
@@ -19,11 +21,31 @@ export interface CalendarToggles {
   solarNoon: boolean
 }
 
+/** 依目前顯示的月份與開關，組出 /print 的深連結 */
+function buildPrintHref(currentMonth: Date | null, toggles: CalendarToggles) {
+  const params = new URLSearchParams()
+  if (currentMonth) {
+    params.set(
+      'months',
+      monthKey(currentMonth.getFullYear(), currentMonth.getMonth() + 1),
+    )
+  }
+  const show = ['lunar']
+  if (toggles.festival) show.push('festival')
+  if (toggles.fasting) show.push('fasting')
+  if (toggles.posadha) show.push('posadha')
+  if (toggles.solarNoon) show.push('solarNoon')
+  params.set('show', show.join(','))
+  return `/print?${params.toString()}`
+}
+
 interface CalendarToolbarProps {
   title: string
   view: CalendarView
   toggles: CalendarToggles
   city: CityName
+  /** 目前檢視的月份起始日，用於列印連結 */
+  currentMonth: Date | null
   onPrev: () => void
   onNext: () => void
   onToday: () => void
@@ -37,6 +59,7 @@ export function CalendarToolbar({
   view,
   toggles,
   city,
+  currentMonth,
   onPrev,
   onNext,
   onToday,
@@ -126,7 +149,19 @@ export function CalendarToolbar({
           onChange={v => onToggle('solarNoon', v)}
         />
 
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 px-3"
+            nativeButton={false}
+            render={
+              <Link href={buildPrintHref(currentMonth, toggles)}>
+                <PrinterIcon className="size-4" />
+                列印
+              </Link>
+            }
+          />
           <ICalSubscribe city={city} />
         </div>
       </div>
