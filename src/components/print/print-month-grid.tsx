@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 
 import {
   WEEKDAY_LABELS,
@@ -12,15 +12,20 @@ interface PrintMonthGridProps {
   month: PrintMonth
   show: PrintContent
   monthsPerPage: MonthsPerPage
+  /** 對折時各面板自帶的圖例；不對折時整張紙共用一份，這裡傳 null。 */
+  legend?: ReactNode
 }
 
 export function PrintMonthGrid({
   month,
   show,
   monthsPerPage,
+  legend = null,
 }: PrintMonthGridProps) {
-  // 版面愈密，布薩只留符號，不印「白月布薩」四字
-  const verbosePosadha = monthsPerPage <= 2
+  // 只有整頁一個月才印「白月布薩」四字。每頁兩個月時欄寬只剩約 24mm，
+  // 這四個字會把標記列擠到換行，連帶把整格內容頂出格外被裁掉；
+  // 符號加上圖例已足以表達，多印四個字是純粹的風險。
+  const verbosePosadha = monthsPerPage === 1
 
   // 標題下的副標，兩段合佔一行
   const notes: string[] = []
@@ -38,6 +43,8 @@ export function PrintMonthGrid({
         </p>
       )}
 
+      {/* 週標題必須是本格線的前 7 個子元素：print.css 的 :nth-child(7n)
+          與 :nth-last-child(-n+7) 靠這個位置關係決定哪一格不畫框線。 */}
       <div
         className="print-grid"
         style={{ '--weeks': month.weeks.length } as CSSProperties}
@@ -57,6 +64,8 @@ export function PrintMonthGrid({
           />
         ))}
       </div>
+
+      {legend}
     </div>
   )
 }
@@ -93,15 +102,18 @@ function DayCell({
         {show.lunar && (
           <span className="print-cell-lunar">{day.lunarText}</span>
         )}
+        {/* 靠右排在同一行。貼齊格底時視覺上會黏到下一週那列的日期。 */}
+        {show.solarNoon && <span className="print-noon">{day.solarNoon}</span>}
       </div>
 
       {hasMarks && (
         <div className="print-marks">
           {posadha && (
             <>
-              <span className="print-mark-moon">
-                {posadha === 'WHITE' ? '○' : '●'}
-              </span>
+              <span
+                className="print-mark-moon"
+                data-phase={posadha === 'WHITE' ? 'white' : 'black'}
+              />
               {verbosePosadha && (
                 <span className="print-mark-text">
                   {posadha === 'WHITE' ? '白月布薩' : '黑月布薩'}
@@ -115,8 +127,6 @@ function DayCell({
       )}
 
       {festival && <div className="print-festival">{festival}</div>}
-
-      {show.solarNoon && <div className="print-noon">{day.solarNoon}</div>}
     </div>
   )
 }

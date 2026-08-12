@@ -69,6 +69,11 @@ export function PrintView() {
     return raw === 2 || raw === 3 || raw === 4 ? raw : 1
   })
 
+  // 預留摺線留白：對折後每一半才有均勻的邊界，摺痕也不會壓到月份標題
+  const [fold, setFold] = useState<boolean>(
+    () => searchParams.get('fold') !== '0',
+  )
+
   const [show, setShow] = useState<PrintContent>(() => {
     const raw = searchParams.get('show')
     if (raw === null) return DEFAULT_SHOW
@@ -89,6 +94,7 @@ export function PrintView() {
     params.set('paper', paper)
     params.set('orient', orientation)
     params.set('per', String(monthsPerPage))
+    params.set('fold', fold ? '1' : '0')
     params.set(
       'show',
       (Object.keys(show) as (keyof PrintContent)[])
@@ -96,7 +102,7 @@ export function PrintView() {
         .join(','),
     )
     router.replace(`/print?${params.toString()}`, { scroll: false })
-  }, [months, paper, orientation, monthsPerPage, show, router])
+  }, [months, paper, orientation, monthsPerPage, fold, show, router])
 
   // 農曆與天文計算只跟月份、城市有關；改紙張或版面不重算
   const printMonths = useMemo<PrintMonth[]>(
@@ -171,6 +177,7 @@ export function PrintView() {
           paper={paper}
           orientation={orientation}
           monthsPerPage={monthsPerPage}
+          fold={fold}
           show={show}
           city={city}
           pageCount={pages.length}
@@ -178,6 +185,7 @@ export function PrintView() {
           onPaperChange={setPaper}
           onOrientationChange={setOrientation}
           onMonthsPerPageChange={setMonthsPerPage}
+          onFoldChange={setFold}
           onShowChange={handleShowChange}
           onCityChange={updateCity}
           onPrint={handlePrint}
@@ -203,6 +211,7 @@ export function PrintView() {
                 paper={paper}
                 orientation={orientation}
                 city={city}
+                fold={fold}
                 previewScale={previewScale}
               />
             ))}

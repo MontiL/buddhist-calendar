@@ -3,77 +3,202 @@
  *
  * 刻意不使用主題 token（--foreground 等）：紙張輸出必須恆為白底黑字，
  * 不因網站的深色模式或配色主題而改變。
+ *
+ * 雷射／超商影印機的物理特性決定了下面三條規則，改動時請一併遵守：
+ *
+ *   1. 小字一律用黑體。明體的橫畫約 0.03em，6pt 時只剩約 1.5 個 600dpi 網點，
+ *      會整段掉筆畫 ——「二」整個字都是橫畫，所以會完全消失。
+ *   2. 小字一律純黑。非純黑的灰階會被印表機半色調網點化，網點的空隙會把細
+ *      筆畫打斷。層級請用「字級」與「線寬」表現，不要用灰階。
+ *   3. line-height 一律明寫。黑體 CJK 的預設行高（PingFang TC 約 1.40、
+ *      Noto Sans CJK 約 1.45）比明體（約 1.20）高出近兩成，不釘死會撐爆版面。
  */
 
 .print-sheet {
-  /* 版面密度變數，由 monthsPerPage 覆寫 */
-  --title-font: 20pt;
-  --day-font: 12pt;
-  --lunar-font: 7.5pt;
-  --mark-font: 7.5pt;
-  --note-font: 8.5pt;
-  --legend-font: 7pt;
-  --cell-pad: 1.4mm;
+  /* 版面密度變數，由 monthsPerPage 與欄數覆寫 */
+  --title-font: 21pt;
+  --weekday-font: 10pt;
+  --day-font: 13pt;
+  --lunar-font: 9pt;
+  --mark-font: 8.5pt;
+  --noon-font: 8pt;
+  --note-font: 9pt;
+  --legend-font: 8pt;
+  --cell-pad: 1.5mm;
 
-  --ink: #1a1a1a;
-  --ink-soft: #666;
-  --ink-faint: #bbb;
-  --rule: #c8c8c8;
-  --rule-strong: #1a1a1a;
+  /* 對折幾何：只要 padding 四邊對稱、且 .print-months 是唯一的 flex:1 子元素，
+     間距中心就恆等於紙張幾何中心（算式中 gap 會相消），摺線必然落在間距正中。
+     gutter = 2 × margin 則讓對折後的每一半四邊留白一致。 */
+  --sheet-margin: 10mm;
+  --gutter: 7mm;
 
+  --ink: #000;
+  --ink-muted: #444; /* 僅用於 ≥7pt 的副標與圖例 */
+  --ink-faint: #767676; /* 僅用於本月以外的日期數字：大字、筆畫疏、耐網點 */
+
+  /* 明體只留給大標題（15pt 以上，橫畫夠粗才安全） */
   --serif: "Songti TC", "Songti SC", "Noto Serif CJK TC", "Noto Serif TC",
     "PMingLiU", serif;
+  --sans: "PingFang TC", "Noto Sans TC", "Noto Sans CJK TC",
+    "Microsoft JhengHei", "Heiti TC", sans-serif;
 
+  /* 摺線記號的定位基準。列印時 transform 會被清成 none，少了這行絕對定位
+     會逃到別的祖先 —— 螢幕預覽正常、只有紙上壞掉。 */
+  position: relative;
   width: var(--sheet-w);
   height: var(--sheet-h);
   background: #fff;
   color: var(--ink);
   box-sizing: border-box;
-  padding: 12mm 12mm 9mm;
+  padding: var(--sheet-margin);
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
 }
 
 .print-sheet[data-per="2"] {
-  --title-font: 15pt;
-  --day-font: 9.5pt;
-  --lunar-font: 6pt;
-  --mark-font: 6pt;
-  --note-font: 7pt;
-  --cell-pad: 1mm;
+  --title-font: 16pt;
+  --weekday-font: 8.5pt;
+  --day-font: 11pt;
+  --lunar-font: 7.5pt;
+  --mark-font: 7.5pt;
+  --noon-font: 7pt;
+  --note-font: 8pt;
+  --legend-font: 7pt;
+  --cell-pad: 1.2mm;
 }
 
+/* 橫向兩個月是左右並排：面板變成又窄又高（約 128 × 190mm），欄寬只剩約
+   18mm，得再降一級才塞得下；垂直方向反而很寬裕，換行的代價付得起。 */
+.print-sheet[data-per="2"][data-cols="2"] {
+  --day-font: 9.5pt;
+  --lunar-font: 6.5pt;
+  --mark-font: 6.5pt;
+  --noon-font: 6.5pt;
+  --cell-pad: 0.9mm;
+}
+
+/* B5 只有 A4 的 0.84 倍，同樣的每頁月數要再降一級才塞得下。
+   注意字級不再往 6.5pt 以下走：與其印出印不出來的字，不如少放一點東西。 */
+.print-sheet[data-paper="B5"][data-per="2"] {
+  --title-font: 14pt;
+  --weekday-font: 8pt;
+  --day-font: 9.5pt;
+  --lunar-font: 6.5pt;
+  --mark-font: 6.5pt;
+  --noon-font: 6.5pt;
+  --note-font: 7pt;
+  --legend-font: 6.5pt;
+  --cell-pad: 0.9mm;
+}
+
+/* 6.5pt 是 CJK 的下限：再小連黑體都撐不住超商影印機 */
 .print-sheet[data-per="3"] {
-  --title-font: 12.5pt;
-  --day-font: 8pt;
-  --lunar-font: 5.2pt;
-  --mark-font: 5.2pt;
-  --note-font: 6pt;
-  --legend-font: 6pt;
-  --cell-pad: 0.7mm;
+  --title-font: 13pt;
+  --weekday-font: 7.5pt;
+  --day-font: 9.5pt;
+  --lunar-font: 6.5pt;
+  --mark-font: 6.5pt;
+  --noon-font: 6.5pt;
+  --note-font: 7pt;
+  --legend-font: 6.5pt;
+  --cell-pad: 0.8mm;
 }
 
 .print-sheet[data-per="4"] {
-  --title-font: 12pt;
-  --day-font: 7.5pt;
-  --lunar-font: 5pt;
-  --mark-font: 5pt;
-  --note-font: 6pt;
-  --legend-font: 6pt;
-  --cell-pad: 0.7mm;
+  --title-font: 12.5pt;
+  --weekday-font: 7pt;
+  --day-font: 9pt;
+  --lunar-font: 6.5pt;
+  --mark-font: 6.5pt;
+  --noon-font: 6.5pt;
+  --note-font: 7pt;
+  --legend-font: 6.5pt;
+  --cell-pad: 0.8mm;
 }
 
-/* 高密度版面：行距收緊，過午時間緊接內容而非貼齊格底 */
+/* 高密度版面：行距再收緊一點 */
 .print-sheet[data-per="3"] .print-cell,
 .print-sheet[data-per="4"] .print-cell {
   line-height: 1.15;
   gap: 0.15mm;
 }
 
-.print-sheet[data-per="3"] .print-noon,
-.print-sheet[data-per="4"] .print-noon {
-  margin-top: 0;
+/* 小紙張的高密度版面欄寬只剩約 9mm（B5 每頁四個月），紀念日名稱最長八個字
+   會被迫折成三行而把整格頂出格外裁掉。字級已經卡在 6.5pt 的下限不能再縮，
+   只好從別處生空間出來：字距歸零、行距收到最緊，並壓縮標題與副標的留白。 */
+.print-sheet[data-per="3"] .print-festival,
+.print-sheet[data-per="4"] .print-festival {
+  letter-spacing: 0;
+  line-height: 1.05;
+  /* 最多兩行，超出的用刪節號收掉。內容放得下時這條規則不生效（A4 每頁四個月
+     的紀念日都只有一行）；只有真的塞不下時才會出現刪節號 —— 至少讓使用者
+     看得出來是被截斷的，而不是無聲無息把字切掉半個。 */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.print-sheet[data-per="3"] .print-month-title,
+.print-sheet[data-per="4"] .print-month-title {
+  padding-bottom: 1.2mm;
+}
+
+.print-sheet[data-per="3"] .print-month-note,
+.print-sheet[data-per="4"] .print-month-note {
+  padding-bottom: 1mm;
+}
+
+.print-sheet[data-per="3"] .print-weekday,
+.print-sheet[data-per="4"] .print-weekday {
+  padding: 0.7mm 0;
+}
+
+/* ---------------- 對折 ---------------- */
+
+/* data-fold 由 PrintSheet 決定：只有「每頁 2 個月且開啟對折留白」才會設。
+   per=4 兩軸都是 2 軌，但沒有人會把 A4 對折兩次成 A6，所以不套用。 */
+.print-sheet[data-fold="h"],
+.print-sheet[data-fold="v"] {
+  --gutter: calc(var(--sheet-margin) * 2);
+}
+
+.print-fold-tick {
+  position: absolute;
+  background: var(--ink);
+}
+
+/* 超商影印機邊緣約有 4–5mm 不可列印區，所以記號從 4mm 起算、長 6mm，
+   內端剛好切齊內容邊界（--sheet-margin），永遠不會壓到格線。 */
+.print-sheet[data-fold="h"] .print-fold-tick {
+  top: 50%;
+  width: 6mm;
+  height: 0.6pt;
+}
+
+.print-sheet[data-fold="h"] .print-fold-tick[data-edge="start"] {
+  left: 4mm;
+}
+
+.print-sheet[data-fold="h"] .print-fold-tick[data-edge="end"] {
+  right: 4mm;
+}
+
+.print-sheet[data-fold="v"] .print-fold-tick {
+  left: 50%;
+  width: 0.6pt;
+  height: 6mm;
+}
+
+.print-sheet[data-fold="v"] .print-fold-tick[data-edge="start"] {
+  top: 4mm;
+}
+
+.print-sheet[data-fold="v"] .print-fold-tick[data-edge="end"] {
+  bottom: 4mm;
 }
 
 /* ---------------- 月份排列 ---------------- */
@@ -82,7 +207,7 @@
   flex: 1;
   min-height: 0;
   display: grid;
-  gap: 7mm;
+  gap: var(--gutter);
   grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
   grid-template-rows: repeat(var(--rows), minmax(0, 1fr));
 }
@@ -93,21 +218,27 @@
   flex-direction: column;
 }
 
+/* letter-spacing 會在最後一個字後面也加一份空隙，置中時整段會左偏半格；
+   padding-left 補回一整份，視覺中心才會回到真正的中線。 */
 .print-month-title {
   font-family: var(--serif);
   font-size: var(--title-font);
   font-weight: 400;
+  line-height: 1.2;
   letter-spacing: 0.18em;
+  padding-left: 0.18em;
   text-align: center;
   padding-bottom: 2.5mm;
   margin: 0;
 }
 
 .print-month-note {
-  font-family: var(--serif);
+  font-family: var(--sans);
   font-size: var(--note-font);
+  line-height: 1.2;
   letter-spacing: 0.1em;
-  color: var(--ink-soft);
+  padding-left: 0.1em;
+  color: var(--ink-muted);
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -124,18 +255,21 @@
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
   grid-template-rows: auto repeat(var(--weeks, 6), minmax(0, 1fr));
-  border: 0.6pt solid var(--rule-strong);
+  border: 0.75pt solid var(--ink);
 }
 
+/* 單一個字不需要 letter-spacing（只會把字推離中線），故不設。 */
 .print-weekday {
-  font-family: var(--serif);
-  font-size: var(--mark-font);
-  letter-spacing: 0.2em;
-  text-indent: 0.2em;
+  font-family: var(--sans);
+  /* 週標題列導航性最強，過去卻跟格內標記共用最小的字級 —— 這正是「二」
+     整個印不出來的原因，所以獨立一個變數。 */
+  font-size: var(--weekday-font);
+  font-weight: 500;
+  line-height: 1.2;
   text-align: center;
   padding: 1.1mm 0;
-  border-bottom: 0.6pt solid var(--rule-strong);
-  border-right: 0.4pt solid var(--rule);
+  border-bottom: 0.5pt solid var(--ink);
+  border-right: 0.4pt solid var(--ink);
 }
 
 .print-weekday:nth-child(7) {
@@ -150,12 +284,14 @@
   display: flex;
   flex-direction: column;
   gap: 0.3mm;
-  border-right: 0.4pt solid var(--rule);
-  border-bottom: 0.4pt solid var(--rule);
-  line-height: 1.25;
+  border-right: 0.4pt solid var(--ink);
+  border-bottom: 0.4pt solid var(--ink);
+  line-height: 1.2;
 }
 
-/* 每列最後一格不畫右框；最後一列不畫下框 */
+/* 每列最後一格不畫右框；最後一列不畫下框。
+   這兩條規則靠「週標題列剛好是 .print-grid 的前 7 個子元素」成立 ——
+   在 .print-grid 裡增刪任何元素（例如加週次欄）都會整排錯位。 */
 .print-cell:nth-child(7n) {
   border-right: 0;
 }
@@ -176,7 +312,7 @@
 
 .print-cell-day {
   font-size: var(--day-font);
-  font-weight: 500;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
   line-height: 1.1;
 }
@@ -187,11 +323,23 @@
 }
 
 .print-cell-lunar {
-  font-family: var(--serif);
+  font-family: var(--sans);
   font-size: var(--lunar-font);
-  color: var(--ink-soft);
+  font-weight: 500;
+  line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
+}
+
+/* 過午時間靠右排在日期同一行：貼齊格底時，視覺上會黏到「下一週」那列的
+   日期上，讀起來像是下一列的時間。數字是全版面筆畫最疏的字，可用最小級數。 */
+.print-noon {
+  margin-left: auto;
+  flex: 0 0 auto;
+  white-space: nowrap;
+  font-size: var(--noon-font);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
 }
 
 .print-marks {
@@ -200,61 +348,89 @@
   align-items: center;
   gap: 0.8mm;
   font-size: var(--mark-font);
+  line-height: 1.2;
 }
 
+/* 布薩用 CSS 畫圓，不用 ○（U+25CB）：那是個全細線的字，而且沒有任何字型
+   宣告涵蓋它，實際字面由系統 fallback 決定 —— 和「二」掉筆畫同一種失效。 */
 .print-mark-moon {
-  font-size: calc(var(--mark-font) * 1.1);
-  line-height: 1;
+  box-sizing: border-box;
+  flex: none;
+  width: calc(var(--mark-font) * 0.78);
+  height: calc(var(--mark-font) * 0.78);
+  border-radius: 50%;
+}
+
+.print-mark-moon[data-phase="white"] {
+  border: 0.5pt solid var(--ink);
+}
+
+.print-mark-moon[data-phase="black"] {
+  background: var(--ink);
 }
 
 .print-mark-tag {
-  font-family: var(--serif);
+  font-family: var(--sans);
   font-size: var(--mark-font);
+  font-weight: 500;
   line-height: 1;
-  padding: 0.3mm 0.5mm;
-  border: 0.3pt solid #999;
+  padding: 0.4mm 0.7mm;
+  border: 0.4pt solid var(--ink);
+  white-space: nowrap;
 }
 
 .print-mark-text {
-  font-family: var(--serif);
+  font-family: var(--sans);
   font-size: var(--mark-font);
+  line-height: 1.2;
 }
 
 .print-festival {
-  font-family: var(--serif);
+  font-family: var(--sans);
   font-size: var(--mark-font);
-  font-weight: 700;
+  /* 黑體 700 在 7.5pt 會把字腔糊死；600 對到 PingFang TC 的 Semibold 實心字面 */
+  font-weight: 600;
+  line-height: 1.2;
   letter-spacing: 0.02em;
 }
 
-.print-noon {
-  margin-top: auto;
-  padding-top: 0.4mm;
-  font-size: var(--mark-font);
-  color: var(--ink-soft);
-  font-variant-numeric: tabular-nums;
-}
+/* ---------------- 圖例 ---------------- */
 
-/* ---------------- 頁尾圖例 ---------------- */
-
+/* 對折時圖例會改成印在每個面板底部，讓摺完的每一半都能獨立看懂 */
 .print-legend {
   flex: none;
-  margin-top: 5mm;
-  padding-top: 1.8mm;
-  border-top: 0.4pt solid var(--rule);
+  margin-top: 1.5mm;
+  padding-top: 1.2mm;
+  border-top: 0.4pt solid var(--ink);
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
-  gap: 6mm;
-  font-family: var(--serif);
+  gap: 0 6mm;
+  font-family: var(--sans);
   font-size: var(--legend-font);
-  color: var(--ink-soft);
+  line-height: 1.2;
+  color: var(--ink-muted);
+}
+
+/* 整張紙共用一份圖例時（未對折），離格線遠一點比較像頁尾 */
+.print-sheet > .print-legend {
+  margin-top: 4mm;
+  padding-top: 1.8mm;
 }
 
 .print-legend-items {
   display: flex;
   flex-wrap: wrap;
+  min-width: 0;
   gap: 0 4mm;
+}
+
+.print-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.8mm;
+  white-space: nowrap;
 }
 
 .print-legend-source {
@@ -275,6 +451,29 @@
     transform: scale(var(--preview-scale));
     transform-origin: top left;
     box-shadow: 0 1px 3px rgb(0 0 0 / 0.16), 0 6px 20px rgb(0 0 0 / 0.1);
+  }
+
+  /* 紙上的摺線記號只有 6mm，預覽縮小後幾乎看不見；螢幕上另外畫一條虛線，
+     讓使用者看得到自己開啟的留白到底落在哪。這條線不會印出來。 */
+  .print-sheet[data-fold="h"]::after,
+  .print-sheet[data-fold="v"]::after {
+    content: "";
+    position: absolute;
+    pointer-events: none;
+  }
+
+  .print-sheet[data-fold="h"]::after {
+    left: 0;
+    right: 0;
+    top: 50%;
+    border-top: 1px dashed rgb(0 0 0 / 0.3);
+  }
+
+  .print-sheet[data-fold="v"]::after {
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    border-left: 1px dashed rgb(0 0 0 / 0.3);
   }
 }
 
@@ -319,7 +518,8 @@
   .print-sheet {
     transform: none !important;
     box-shadow: none !important;
-    /* 高度扣掉一絲，避免捨入誤差把每張紙後面擠出一頁空白 */
+    /* 高度扣掉一絲，避免捨入誤差把每張紙後面擠出一頁空白。
+       摺線記號用 top:50%（而非寫死 148.5mm），才會跟著這 0.2mm 一起位移。 */
     height: calc(var(--sheet-h) - 0.2mm) !important;
     break-inside: avoid;
   }
