@@ -21,10 +21,18 @@
   --day-font: 13pt;
   --lunar-font: 9pt;
   --mark-font: 8.5pt;
+  /* 齋是全版面筆劃最密的字（17 劃），與一般標記脫鉤自成一級。
+     最小可讀字級要隨筆劃數提高，不是所有小字都能用同一個下限。 */
+  --tag-font: 11pt;
+  --festival-font: 11pt;
   --noon-font: 8pt;
   --note-font: 9pt;
   --legend-font: 8pt;
   --cell-pad: 1.5mm;
+  /* 長齋月的左緣實帶。必須 ≤ --cell-pad，否則文字會壓在帶上。
+     0.5mm 已是 600dpi 下約 12 個網點，列印絕對穩；再粗（試過 0.9mm）整頁
+     會被實帶主導，反而蓋過它要標註的內容 —— 農曆九月連續 22 天都有帶。 */
+  --band-w: 0.5mm;
 
   /* 對折幾何：只要 padding 四邊對稱、且 .print-months 是唯一的 flex:1 子元素，
      間距中心就恆等於紙張幾何中心（算式中 gap 會相消），摺線必然落在間距正中。
@@ -64,6 +72,11 @@
   --day-font: 11pt;
   --lunar-font: 7.5pt;
   --mark-font: 7.5pt;
+  --tag-font: 10pt;
+  /* 8.5pt 是硬上限：欄內寬 24.48mm ÷ 8 字 = 3.06mm = 8.67pt，再大就折兩行。
+     而最擠的一格（農曆二月十五「釋迦牟尼佛涅槃日」，同時是六齋日又是白月
+     布薩）只剩約 5.4mm，單行 3.0mm 放得下、兩行 6.0mm 放不下。 */
+  --festival-font: 8.5pt;
   --noon-font: 7pt;
   --note-font: 8pt;
   --legend-font: 7pt;
@@ -76,6 +89,8 @@
   --day-font: 9.5pt;
   --lunar-font: 6.5pt;
   --mark-font: 6.5pt;
+  --tag-font: 8.5pt;
+  --festival-font: 7.5pt;
   --noon-font: 6.5pt;
   --cell-pad: 0.9mm;
 }
@@ -88,6 +103,8 @@
   --day-font: 9.5pt;
   --lunar-font: 6.5pt;
   --mark-font: 6.5pt;
+  --tag-font: 8.5pt;
+  --festival-font: 7pt;
   --noon-font: 6.5pt;
   --note-font: 7pt;
   --legend-font: 6.5pt;
@@ -101,10 +118,14 @@
   --day-font: 9.5pt;
   --lunar-font: 6.5pt;
   --mark-font: 6.5pt;
+  --tag-font: 8pt;
+  --festival-font: 7pt;
   --noon-font: 6.5pt;
   --note-font: 7pt;
   --legend-font: 6.5pt;
   --cell-pad: 0.8mm;
+  /* 內距只剩 0.8mm，實帶跟著收窄，否則文字會壓在帶上 */
+  --band-w: 0.4mm;
 }
 
 .print-sheet[data-per="4"] {
@@ -113,10 +134,13 @@
   --day-font: 9pt;
   --lunar-font: 6.5pt;
   --mark-font: 6.5pt;
+  --tag-font: 8pt;
+  --festival-font: 7pt;
   --noon-font: 6.5pt;
   --note-font: 7pt;
   --legend-font: 6.5pt;
   --cell-pad: 0.8mm;
+  --band-w: 0.4mm;
 }
 
 /* 高密度版面：行距再收緊一點 */
@@ -128,10 +152,9 @@
 
 /* 小紙張的高密度版面欄寬只剩約 9mm（B5 每頁四個月），紀念日名稱最長八個字
    會被迫折成三行而把整格頂出格外裁掉。字級已經卡在 6.5pt 的下限不能再縮，
-   只好從別處生空間出來：字距歸零、行距收到最緊，並壓縮標題與副標的留白。 */
+   只好從別處生空間出來：行距收到最緊，並壓縮標題與副標的留白。 */
 .print-sheet[data-per="3"] .print-festival,
 .print-sheet[data-per="4"] .print-festival {
-  letter-spacing: 0;
   line-height: 1.05;
   /* 最多兩行，超出的用刪節號收掉。內容放得下時這條規則不生效（A4 每頁四個月
      的紀念日都只有一行）；只有真的塞不下時才會出現刪節號 —— 至少讓使用者
@@ -277,6 +300,7 @@
 }
 
 .print-cell {
+  position: relative; /* 長齋月實帶的定位基準 */
   min-width: 0;
   min-height: 0;
   overflow: hidden;
@@ -298,6 +322,23 @@
 
 .print-cell:nth-last-child(-n + 7) {
   border-bottom: 0;
+}
+
+/* 長齋月：整段期間的狀態，不是每天一件事。畫成左緣實帶，連續的日子會連成
+   一道直帶，一眼看出區間 —— 過去每天蓋一個「長」方框，一個月要蓋 22 個，
+   既是語意誤植也是格子最擁擠的來源。
+
+   刻意用絕對定位的 ::before 而不是 border-left：儲存格是 border-box，左框
+   會把內容寬度吃掉 0.9mm，剛好讓農曆九月（長齋月）的「觀世音菩薩出家日」
+   折行，其他月份的八字名稱卻不折，看起來像排版出錯。 */
+.print-cell[data-long-fast]::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: var(--band-w);
+  background: var(--ink);
 }
 
 /* 日期數字與農曆同列：省下一行高度，也貼近傳統月曆的排法。
@@ -346,7 +387,8 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.8mm;
+  /* 標記不再加框，改由間距分隔 */
+  gap: 1.2mm;
   font-size: var(--mark-font);
   line-height: 1.2;
 }
@@ -369,13 +411,17 @@
   background: var(--ink);
 }
 
-.print-mark-tag {
+/* 六齋日的「齋」。過去加了方框：框線與內距吃掉 39% 的佔位寬，讓全版面筆劃
+   最密的字反而拿到最小的字面，17 劃在 7.5pt 下筆劃間距只剩約 3 個 600dpi
+   網點，過完碳粉擴散就糊成一團。框的區隔功能改由「種類」承擔（實帶＝期間、
+   圓點與單字＝標記、名稱＝事件），空間全部還給字。
+
+   字重維持 400：加粗會讓筆劃變粗、間隙變窄，對密筆畫的字是幫倒忙。 */
+.print-mark-glyph {
   font-family: var(--sans);
-  font-size: var(--mark-font);
-  font-weight: 500;
+  font-size: var(--tag-font);
+  font-weight: 400;
   line-height: 1;
-  padding: 0.4mm 0.7mm;
-  border: 0.4pt solid var(--ink);
   white-space: nowrap;
 }
 
@@ -385,13 +431,15 @@
   line-height: 1.2;
 }
 
+/* 「觀」25 劃、「薩」17 劃，是全版面筆劃最密的字。字重壓到 500：semibold
+   會把這種字的字腔糊死。字距歸零 —— 0.02em × 8 字 = 0.48mm，剛好足以把
+   八字的名稱從單行擠成兩行。 */
 .print-festival {
   font-family: var(--sans);
-  font-size: var(--mark-font);
-  /* 黑體 700 在 7.5pt 會把字腔糊死；600 對到 PingFang TC 的 Semibold 實心字面 */
-  font-weight: 600;
+  font-size: var(--festival-font);
+  font-weight: 500;
   line-height: 1.2;
-  letter-spacing: 0.02em;
+  letter-spacing: 0;
 }
 
 /* ---------------- 圖例 ---------------- */
@@ -431,6 +479,14 @@
   align-items: center;
   gap: 0.8mm;
   white-space: nowrap;
+}
+
+/* 圖例裡的長齋月記號，畫成一小段實帶 —— 必須和格子左緣畫的是同一個東西 */
+.print-legend-band {
+  flex: none;
+  width: var(--band-w);
+  height: calc(var(--legend-font) * 1.1);
+  background: var(--ink);
 }
 
 .print-legend-source {

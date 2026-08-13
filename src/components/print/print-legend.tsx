@@ -37,11 +37,11 @@ export function PrintLegend({
         {show.fasting && (
           <>
             <span className="print-legend-item">
-              <span className="print-mark-tag">齋</span>
+              <span className="print-mark-glyph">齋</span>
               六齋日
             </span>
             <span className="print-legend-item">
-              <span className="print-mark-tag">長</span>
+              <span className="print-legend-band" />
               長齋月
             </span>
           </>

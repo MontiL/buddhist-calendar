@@ -93,10 +93,12 @@ function DayCell({
   const sixthDay = show.fasting && day.isSixthDay
   const longFast = show.fasting && day.isLongFastMonth
   const festival = show.festival ? day.festival : null
-  const hasMarks = Boolean(posadha || sixthDay || longFast)
+  const hasMarks = Boolean(posadha || sixthDay)
 
   return (
-    <div className="print-cell">
+    // 長齋月是橫跨整個農曆月的「期間」，不是每天各自發生的事，所以畫成儲存格
+    // 左緣的實帶（連續日子會連成一道直帶），不再每天蓋一個「長」方框
+    <div className="print-cell" data-long-fast={longFast ? '' : undefined}>
       <div className="print-cell-head">
         <span className="print-cell-day">{day.dayNumber}</span>
         {show.lunar && (
@@ -121,8 +123,7 @@ function DayCell({
               )}
             </>
           )}
-          {sixthDay && <span className="print-mark-tag">齋</span>}
-          {longFast && <span className="print-mark-tag">長</span>}
+          {sixthDay && <span className="print-mark-glyph">齋</span>}
         </div>
       )}
 
