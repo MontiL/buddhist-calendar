@@ -65,6 +65,17 @@ export const cellSizeMm = (
 export const MIN_ROW_MM = 11.5
 export const MIN_COL_MM = 20
 
+/**
+ * 布薩圓點沉到儲存格右下角時要多佔一行高度。實測 32 種版面（紙張 × 方向 ×
+ * 每頁月數，取全年最擠的月份）：每頁三／四個月，以及 B5 的所有版面，格子都
+ * 矮到付不起這一行，紀念日名稱會被裁掉。這些版面改把圓點併入標記列右端 ——
+ * 一樣靠右自成一欄，但不佔額外高度。
+ */
+const isCompactPosadha = (
+  paper: PaperSize,
+  monthsPerPage: MonthsPerPage,
+): boolean => monthsPerPage > 2 || paper === 'B5'
+
 /** 對折軸向：'h' 橫向對折（上下兩半）、'v' 直向對折（左右兩半）、null 不對折。 */
 type FoldAxis = 'h' | 'v' | null
 
@@ -133,6 +144,7 @@ export function PrintSheet({
               month={month}
               show={show}
               monthsPerPage={monthsPerPage}
+              compactPosadha={isCompactPosadha(paper, monthsPerPage)}
               // 對折後每一半都要能獨立看懂，圖例改印在各自的面板底部
               legend={axis ? <PrintLegend show={show} city={city} /> : null}
             />

@@ -12,6 +12,11 @@ interface PrintMonthGridProps {
   month: PrintMonth
   show: PrintContent
   monthsPerPage: MonthsPerPage
+  /**
+   * 格子矮到放不下「布薩獨佔一行」時為 true，圓點改併入標記列右端。
+   * 右下角比較顯眼，但要多佔一行高度；實測 32 種版面裡有 7 種付不起。
+   */
+  compactPosadha: boolean
   /** 對折時各面板自帶的圖例；不對折時整張紙共用一份，這裡傳 null。 */
   legend?: ReactNode
 }
@@ -20,6 +25,7 @@ export function PrintMonthGrid({
   month,
   show,
   monthsPerPage,
+  compactPosadha,
   legend = null,
 }: PrintMonthGridProps) {
   // 只有整頁一個月才印「白月布薩」四字。每頁兩個月時欄寬只剩約 24mm，
@@ -61,6 +67,7 @@ export function PrintMonthGrid({
             day={day}
             show={show}
             verbosePosadha={verbosePosadha}
+            compactPosadha={compactPosadha}
           />
         ))}
       </div>
@@ -74,10 +81,12 @@ function DayCell({
   day,
   show,
   verbosePosadha,
+  compactPosadha,
 }: {
   day: PrintDay
   show: PrintContent
   verbosePosadha: boolean
+  compactPosadha: boolean
 }) {
   if (!day.inMonth) {
     return (
@@ -93,7 +102,24 @@ function DayCell({
   const sixthDay = show.fasting && day.isSixthDay
   const longFast = show.fasting && day.isLongFastMonth
   const festival = show.festival ? day.festival : null
-  const hasMarks = Boolean(posadha || sixthDay)
+  // 布薩是最重要的日子，但每月只有兩天，值得自成一區而不是跟齋擠在同一列。
+  // 格子夠高時沉到右下角（位置本身就是識別，整頁掃下來一眼就找得到）；
+  // 太密的版面付不起這一行高度，就併入標記列右端，一樣靠右自成一欄。
+  const posadhaMark = posadha ? (
+    <span className={compactPosadha ? 'print-posadha is-inline' : 'print-posadha'}>
+      {verbosePosadha && (
+        <span className="print-mark-text">
+          {posadha === 'WHITE' ? '白月布薩' : '黑月布薩'}
+        </span>
+      )}
+      <span
+        className="print-mark-moon"
+        data-phase={posadha === 'WHITE' ? 'white' : 'black'}
+      />
+    </span>
+  ) : null
+
+  const hasMarks = Boolean(sixthDay || (compactPosadha && posadha))
 
   return (
     // 長齋月是橫跨整個農曆月的「期間」，不是每天各自發生的事，所以畫成儲存格
@@ -110,24 +136,14 @@ function DayCell({
 
       {hasMarks && (
         <div className="print-marks">
-          {posadha && (
-            <>
-              <span
-                className="print-mark-moon"
-                data-phase={posadha === 'WHITE' ? 'white' : 'black'}
-              />
-              {verbosePosadha && (
-                <span className="print-mark-text">
-                  {posadha === 'WHITE' ? '白月布薩' : '黑月布薩'}
-                </span>
-              )}
-            </>
-          )}
           {sixthDay && <span className="print-mark-glyph">齋</span>}
+          {compactPosadha && posadhaMark}
         </div>
       )}
 
       {festival && <div className="print-festival">{festival}</div>}
+
+      {!compactPosadha && posadhaMark}
     </div>
   )
 }

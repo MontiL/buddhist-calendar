@@ -25,6 +25,8 @@
      最小可讀字級要隨筆劃數提高，不是所有小字都能用同一個下限。 */
   --tag-font: 11pt;
   --festival-font: 11pt;
+  /* 布薩圓點：獨立於字級，因為它現在自成一區不跟文字並排 */
+  --moon-size: 3mm;
   --noon-font: 8pt;
   --note-font: 9pt;
   --legend-font: 8pt;
@@ -73,6 +75,7 @@
   --lunar-font: 7.5pt;
   --mark-font: 7.5pt;
   --tag-font: 10pt;
+  --moon-size: 2.4mm;
   /* 8.5pt 是硬上限：欄內寬 24.48mm ÷ 8 字 = 3.06mm = 8.67pt，再大就折兩行。
      而最擠的一格（農曆二月十五「釋迦牟尼佛涅槃日」，同時是六齋日又是白月
      布薩）只剩約 5.4mm，單行 3.0mm 放得下、兩行 6.0mm 放不下。 */
@@ -90,6 +93,7 @@
   --lunar-font: 6.5pt;
   --mark-font: 6.5pt;
   --tag-font: 8.5pt;
+  --moon-size: 2mm;
   --festival-font: 7.5pt;
   --noon-font: 6.5pt;
   --cell-pad: 0.9mm;
@@ -104,6 +108,7 @@
   --lunar-font: 6.5pt;
   --mark-font: 6.5pt;
   --tag-font: 8.5pt;
+  --moon-size: 2mm;
   --festival-font: 7pt;
   --noon-font: 6.5pt;
   --note-font: 7pt;
@@ -119,6 +124,7 @@
   --lunar-font: 6.5pt;
   --mark-font: 6.5pt;
   --tag-font: 8pt;
+  --moon-size: 1.8mm;
   --festival-font: 7pt;
   --noon-font: 6.5pt;
   --note-font: 7pt;
@@ -135,6 +141,7 @@
   --lunar-font: 6.5pt;
   --mark-font: 6.5pt;
   --tag-font: 8pt;
+  --moon-size: 1.8mm;
   --festival-font: 7pt;
   --noon-font: 6.5pt;
   --note-font: 7pt;
@@ -393,13 +400,36 @@
   line-height: 1.2;
 }
 
+/* 布薩固定在格子右下角，和日期數字（左上）對角，離其他標記最遠。
+   格線是 0.4pt 實心黑，圓點落在框內不會被誤讀成下一列的東西 —— 過午時間
+   當初會黏到下一列，是因為它靠左、正好疊在下一格的日期數字上方。 */
+/* margin-top:auto + align-self:flex-end = 有空間時沉到右下角，沒空間時緊接
+   在內容後方仍靠右 —— 絕不重疊。曾試過絕對定位（不佔高度），但 32 種版面
+   裡有 7 種會讓圓點壓在紀念日名稱上，密版面尤其嚴重。 */
+.print-posadha {
+  margin-top: auto;
+  align-self: flex-end;
+  display: flex;
+  align-items: center;
+  gap: 0.8mm;
+  line-height: 1;
+}
+
+/* 密版面的退路：併入標記列右端，不佔額外高度。margin-left:auto 而非
+   space-between —— 齋被關掉時圓點仍然靠右，不會滑回左邊。 */
+.print-posadha.is-inline {
+  margin-top: 0;
+  margin-left: auto;
+  align-self: center;
+}
+
 /* 布薩用 CSS 畫圓，不用 ○（U+25CB）：那是個全細線的字，而且沒有任何字型
    宣告涵蓋它，實際字面由系統 fallback 決定 —— 和「二」掉筆畫同一種失效。 */
 .print-mark-moon {
   box-sizing: border-box;
   flex: none;
-  width: calc(var(--mark-font) * 0.78);
-  height: calc(var(--mark-font) * 0.78);
+  width: var(--moon-size);
+  height: var(--moon-size);
   border-radius: 50%;
 }
 
