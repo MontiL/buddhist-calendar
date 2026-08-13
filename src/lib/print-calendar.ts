@@ -38,6 +38,99 @@ export const paperDimensions = (
   return orientation === 'landscape' ? { w: h, h: w } : { w, h }
 }
 
+/* ------------------------------------------------------------------ */
+/* 對折方式                                                             */
+/* ------------------------------------------------------------------ */
+
+/**
+ * 對折方式。三種摺法的物理差異決定了排版差異：
+ *
+ *   half      收納用。對折後兩半都朝同一面，攤開或夾在書裡看，兩半皆正立。
+ *   standTall 立牌・直向摺線。繞垂直軸旋轉會保留「上」方向，兩半皆正立；
+ *             摺完摺線垂直、站在下緣，自由邊在左右兩側 ——「側邊開口站」。
+ *   standWide 立牌・橫向摺線。繞水平軸旋轉會把「上」翻成「下」，所以上半必須
+ *             在平張上先轉 180°，摺完（摺線在頂端成 Λ）才會正立；站在兩個
+ *             自由邊上 ——「開口處站」。
+ *
+ * 兩種立牌都是單面列印、印刷面朝外的山摺，摺完得到正反兩面各有內容的桌立卡。
+ */
+export type FoldMode = 'none' | 'half' | 'standTall' | 'standWide'
+
+/** 摺線軸向：'h' 橫向摺線（上下兩半）、'v' 直向摺線（左右兩半）。 */
+export type FoldAxis = 'h' | 'v'
+
+export type FoldModeInfo = {
+  label: string
+  /** 按鈕上的第二行小字 */
+  hint: string
+  description: string
+  /**
+   * 摺線軸。立牌的軸由站法決定，與紙張方向無關；
+   * half 為 null，代表沿用「由紙張方向推導」的舊規則。
+   */
+  axis: FoldAxis | null
+  /** 選取時要自動切換到的紙張方向；null 代表不干涉。 */
+  recommendedOrientation: Orientation | null
+  /** 可用的每頁月數。奇數頁無法對半分，故 3 一律不在列。 */
+  allowedPerPage: MonthsPerPage[]
+}
+
+export const FOLD_MODES: Record<FoldMode, FoldModeInfo> = {
+  none: {
+    label: '不對折',
+    hint: '整頁攤平',
+    description: '版面較滿，但對折時摺痕可能壓到月份標題。',
+    axis: null,
+    recommendedOrientation: null,
+    allowedPerPage: [1, 2, 3, 4],
+  },
+  half: {
+    label: '對折收納',
+    hint: '摺成半張',
+    description:
+      '摺線兩側各留 10mm 空白，並在紙邊印出摺線記號。兩半都是正立的，適合對折後夾在書裡。',
+    axis: null,
+    recommendedOrientation: null,
+    allowedPerPage: [2],
+  },
+  standTall: {
+    label: '直立 V',
+    hint: '側邊開口站',
+    description:
+      '沿直向摺線對折、印刷面朝外，摺線垂直立在桌上，開口朝左右兩側。兩面都是正立的。建議搭配橫向紙張。',
+    axis: 'v',
+    recommendedOrientation: 'landscape',
+    allowedPerPage: [2, 4],
+  },
+  standWide: {
+    label: '橫立 V',
+    hint: '開口處站',
+    description:
+      '沿橫向摺線對折、摺線朝上立成 Λ，站在開口處。預覽中上半頁是上下顛倒的 —— 那是摺好之後的背面，對折後就會轉正。建議搭配直向紙張。',
+    axis: 'h',
+    recommendedOrientation: 'portrait',
+    allowedPerPage: [2, 4],
+  },
+}
+
+export const FOLD_MODE_VALUES = Object.keys(FOLD_MODES) as FoldMode[]
+
+export const isFoldAllowed = (
+  mode: FoldMode,
+  monthsPerPage: MonthsPerPage,
+): boolean => FOLD_MODES[mode].allowedPerPage.includes(monthsPerPage)
+
+/**
+ * 解析網址參數。舊版把對折存成布林（fold=1／fold=0），既有的書籤要繼續有效：
+ * 1 對應到今日的預設行為（half），0 對應到 none。
+ */
+export const parseFoldMode = (raw: string | null): FoldMode => {
+  if (raw === null) return 'half'
+  if (raw === '1') return 'half'
+  if (raw === '0') return 'none'
+  return (FOLD_MODE_VALUES as string[]).includes(raw) ? (raw as FoldMode) : 'half'
+}
+
 /** 可列印的內容項目。 */
 export type PrintContent = {
   lunar: boolean

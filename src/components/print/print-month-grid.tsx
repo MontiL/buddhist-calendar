@@ -17,6 +17,16 @@ interface PrintMonthGridProps {
    * 右下角比較顯眼，但要多佔一行高度；實測 32 種版面裡有 7 種付不起。
    */
   compactPosadha: boolean
+  /**
+   * 橫立 V 的背面（紙的上半）：繞水平軸對折會把「上」翻成「下」，所以要先在
+   * 平張上轉 180°，摺完才是正立的。預覽裡看起來顛倒是正常的。
+   */
+  rotated?: boolean
+  /**
+   * 螢幕預覽的正面／背面標籤，每一面只標在視覺上的起點那一格；null 為不標。
+   * 只有橫立 V 用得到（直立 V 兩面都正立，沒有正背之分）。
+   */
+  face?: 'front' | 'back' | null
   /** 對折時各面板自帶的圖例；不對折時整張紙共用一份，這裡傳 null。 */
   legend?: ReactNode
 }
@@ -26,6 +36,8 @@ export function PrintMonthGrid({
   show,
   monthsPerPage,
   compactPosadha,
+  rotated = false,
+  face = null,
   legend = null,
 }: PrintMonthGridProps) {
   // 只有整頁一個月才印「白月布薩」四字。每頁兩個月時欄寬只剩約 24mm，
@@ -39,7 +51,11 @@ export function PrintMonthGrid({
   if (show.fasting && month.hasLongFastMonth) notes.push('本月含長齋月')
 
   return (
-    <div className="print-month">
+    <div
+      className="print-month"
+      data-rotate={rotated ? '180' : undefined}
+      data-face={face ?? undefined}
+    >
       <h2 className="print-month-title">{month.title}</h2>
       {notes.length > 0 && (
         <p className="print-month-note">

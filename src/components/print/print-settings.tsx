@@ -10,8 +10,11 @@ import { Switch } from '@/components/ui/switch'
 import { CityPicker } from '@/components/city-picker'
 import type { CityName } from '@/lib/solar-noon'
 import {
+  FOLD_MODES,
   PAPER_MM,
   PAPER_SIZES,
+  isFoldAllowed,
+  type FoldMode,
   type MonthKey,
   type MonthsPerPage,
   type Orientation,
@@ -20,6 +23,10 @@ import {
 } from '@/lib/print-calendar'
 
 const MONTHS_PER_PAGE: MonthsPerPage[] = [1, 2, 3, 4]
+
+/** 攤平的摺法（文字按鈕）與立牌（圖示卡片）分開排：兩者是不同種類的東西。 */
+const FLAT_FOLDS: FoldMode[] = ['none', 'half']
+const STAND_FOLDS: FoldMode[] = ['standTall', 'standWide']
 
 const CONTENT_LABELS: { key: keyof PrintContent; label: string }[] = [
   { key: 'lunar', label: '農曆日期' },
@@ -34,7 +41,7 @@ interface PrintSettingsProps {
   paper: PaperSize
   orientation: Orientation
   monthsPerPage: MonthsPerPage
-  fold: boolean
+  foldMode: FoldMode
   show: PrintContent
   city: CityName
   pageCount: number
@@ -42,7 +49,7 @@ interface PrintSettingsProps {
   onPaperChange: (paper: PaperSize) => void
   onOrientationChange: (orientation: Orientation) => void
   onMonthsPerPageChange: (value: MonthsPerPage) => void
-  onFoldChange: (value: boolean) => void
+  onFoldModeChange: (value: FoldMode) => void
   onShowChange: (key: keyof PrintContent, value: boolean) => void
   onCityChange: (city: CityName) => void
   onPrint: () => void
@@ -53,7 +60,7 @@ export function PrintSettings({
   paper,
   orientation,
   monthsPerPage,
-  fold,
+  foldMode,
   show,
   city,
   pageCount,
@@ -61,7 +68,7 @@ export function PrintSettings({
   onPaperChange,
   onOrientationChange,
   onMonthsPerPageChange,
-  onFoldChange,
+  onFoldModeChange,
   onShowChange,
   onCityChange,
   onPrint,
@@ -122,26 +129,17 @@ export function PrintSettings({
         </div>
       </Field>
 
-      {/* 對折只在「每頁兩個月」時成立：正好把紙折成兩個面板 */}
-      {monthsPerPage === 2 && (
-        <Field label="對折">
-          <label className="flex cursor-pointer items-center justify-between text-sm select-none">
-            <span>預留摺線留白</span>
-            <Switch checked={fold} onCheckedChange={onFoldChange} />
-          </label>
-          <p className="mt-1.5 text-xs text-muted-foreground">
-            {fold
-              ? '摺線兩側各留 10mm 空白，並在紙邊印出摺線記號。'
-              : '版面較滿，但對折時摺痕可能壓到月份標題。'}
-          </p>
-        </Field>
-      )}
+      <FoldModePicker
+        foldMode={foldMode}
+        monthsPerPage={monthsPerPage}
+        onChange={onFoldModeChange}
+      />
 
       <DensityWarning
         paper={paper}
         orientation={orientation}
         monthsPerPage={monthsPerPage}
-        fold={fold}
+        foldMode={foldMode}
       />
 
       <Separator />
@@ -183,8 +181,128 @@ export function PrintSettings({
         </p>
       </div>
 
-      <PrintTips fold={fold} monthsPerPage={monthsPerPage} />
+      <PrintTips foldMode={foldMode} />
     </div>
+  )
+}
+
+/**
+ * 對折方式。分成兩排：攤平的摺法用文字按鈕，立牌用附圖示的卡片。
+ *
+ * 圖示不是裝飾 ——「側邊開口站」與「開口處站」兩個詞光看文字很難分辨，
+ * 一個站著的側視圖就能講完，這是整個功能最需要視覺說明的地方。
+ */
+function FoldModePicker({
+  foldMode,
+  monthsPerPage,
+  onChange,
+}: {
+  foldMode: FoldMode
+  monthsPerPage: MonthsPerPage
+  onChange: (value: FoldMode) => void
+}) {
+  const flat = FLAT_FOLDS.filter(mode => isFoldAllowed(mode, monthsPerPage))
+  const stands = STAND_FOLDS.filter(mode => isFoldAllowed(mode, monthsPerPage))
+
+  // 只剩「不對折」一個選項時（每頁 1 或 3 個月）沒有東西好選，整區收掉
+  if (stands.length === 0 && flat.length < 2) return null
+
+  return (
+    <Field label="對折方式">
+      <div className="flex flex-col gap-1.5">
+        <div className={`grid gap-1 ${flat.length > 1 ? 'grid-cols-2' : ''}`}>
+          {flat.map(mode => (
+            <SegmentButton
+              key={mode}
+              active={foldMode === mode}
+              onClick={() => onChange(mode)}
+            >
+              {FOLD_MODES[mode].label}
+            </SegmentButton>
+          ))}
+        </div>
+
+        {stands.length > 0 && (
+          <div className="grid grid-cols-2 gap-1">
+            {stands.map(mode => (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => onChange(mode)}
+                className={`flex flex-col items-center gap-1 rounded-md border px-1 py-2 transition-colors ${
+                  foldMode === mode
+                    ? 'border-primary bg-primary text-primary-foreground'
+                    : 'hover:bg-accent'
+                }`}
+              >
+                <FoldIcon mode={mode} />
+                <span className="text-sm leading-tight">
+                  {FOLD_MODES[mode].label}
+                </span>
+                <span
+                  className={`text-[10px] leading-tight ${
+                    foldMode === mode
+                      ? 'text-primary-foreground/75'
+                      : 'text-muted-foreground'
+                  }`}
+                >
+                  {FOLD_MODES[mode].hint}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <p className="mt-1.5 text-xs text-muted-foreground">
+        {FOLD_MODES[foldMode].description}
+      </p>
+    </Field>
+  )
+}
+
+/**
+ * 立牌的示意圖，都畫成「站在桌面上」的視角，地面線是共同的基準。
+ *
+ * standTall：正面板 + 往右後方收的側板，摺線是兩者相接的那條直線 ——
+ *   從上方看就是個 V，左右兩側的自由邊即「側邊開口」。
+ * standWide：側視的 Λ，頂點就是摺線，兩個自由邊直接站在地面上。
+ */
+function FoldIcon({ mode }: { mode: FoldMode }) {
+  const common = {
+    width: 40,
+    height: 30,
+    viewBox: '0 0 40 30',
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 1.4,
+    strokeLinecap: 'round' as const,
+    strokeLinejoin: 'round' as const,
+    'aria-hidden': true,
+  }
+
+  if (mode === 'standTall') {
+    return (
+      <svg {...common}>
+        <line x1="3" y1="26" x2="37" y2="26" opacity="0.35" />
+        {/* 正面板 */}
+        <path d="M9 6h13v20H9z" />
+        {/* 往後收的側板（透視） */}
+        <path d="M22 6l9 3v14l-9 3" />
+        {/* 摺線：兩板相接處 */}
+        <line x1="22" y1="6" x2="22" y2="26" strokeWidth="2" />
+      </svg>
+    )
+  }
+
+  return (
+    <svg {...common}>
+      <line x1="3" y1="26" x2="37" y2="26" opacity="0.35" />
+      {/* 側視的 Λ：兩個自由邊站在地面，頂點是摺線 */}
+      <path d="M8 26L20 8l12 18" />
+      {/* 摺線記號 */}
+      <circle cx="20" cy="8" r="1.6" fill="currentColor" stroke="none" />
+    </svg>
   )
 }
 
@@ -196,14 +314,19 @@ function DensityWarning({
   paper,
   orientation,
   monthsPerPage,
-  fold,
+  foldMode,
 }: {
   paper: PaperSize
   orientation: Orientation
   monthsPerPage: MonthsPerPage
-  fold: boolean
+  foldMode: FoldMode
 }) {
-  const { rowMm, colMm } = cellSizeMm(paper, orientation, monthsPerPage, fold)
+  const { rowMm, colMm } = cellSizeMm(
+    paper,
+    orientation,
+    monthsPerPage,
+    foldMode,
+  )
   if (rowMm >= MIN_ROW_MM || colMm >= MIN_COL_MM) return null
 
   return (
@@ -219,22 +342,26 @@ function DensityWarning({
  * 瀏覽器的列印對話框與超商影印機的設定，CSS 一律管不到，只能用文案提醒。
  * 縮放與頁首頁尾會直接毀掉這裡所有的版面計算。
  */
-function PrintTips({
-  fold,
-  monthsPerPage,
-}: {
-  fold: boolean
-  monthsPerPage: MonthsPerPage
-}) {
+function PrintTips({ foldMode }: { foldMode: FoldMode }) {
   const tips = [
     '縮放請選「100%／實際大小」，不要用「符合頁面」。',
     '關閉「頁首及頁尾」。',
     '用 Chrome「另存為 PDF」後再上傳超商，字型才會一起嵌入。',
   ]
 
-  if (monthsPerPage === 2 && fold) {
+  if (foldMode === 'half') {
     // 短邊翻頁會把背面整個轉 180°，摺線位置雖然仍對齊，但背面的月份會上下顛倒
     tips.push('雙面請選「長邊翻頁」，否則背面會上下顛倒。')
+  }
+
+  if (foldMode === 'standTall' || foldMode === 'standWide') {
+    // 立牌是單面印、印刷面朝外對折，正反兩面的內容都已經排在同一面紙上
+    tips.push('立牌請印單面，沿紙邊記號對折、印刷面朝外。')
+    tips.push('紙張建議 120g 以上，太薄站不穩。')
+  }
+
+  if (foldMode === 'standWide') {
+    tips.push('預覽中上半頁是顛倒的 —— 那是背面，對折後就會轉正。')
   }
 
   return (

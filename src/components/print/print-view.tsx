@@ -10,12 +10,16 @@ import { PrintSettings } from './print-settings'
 import { PrintSheet } from './print-sheet'
 import { useCity } from '@/hooks/use-city'
 import {
+  FOLD_MODES,
   PAPER_MM,
   buildPrintMonth,
+  isFoldAllowed,
   monthKey,
   paperDimensions,
+  parseFoldMode,
   parseMonthKey,
   sortMonthKeys,
+  type FoldMode,
   type MonthKey,
   type MonthsPerPage,
   type Orientation,
@@ -69,9 +73,9 @@ export function PrintView() {
     return raw === 2 || raw === 3 || raw === 4 ? raw : 1
   })
 
-  // 預留摺線留白：對折後每一半才有均勻的邊界，摺痕也不會壓到月份標題
-  const [fold, setFold] = useState<boolean>(
-    () => searchParams.get('fold') !== '0',
+  // 對折方式：收納對折預留摺線留白，立牌則決定摺線軸與背面是否要轉 180°
+  const [foldMode, setFoldMode] = useState<FoldMode>(() =>
+    parseFoldMode(searchParams.get('fold')),
   )
 
   const [show, setShow] = useState<PrintContent>(() => {
@@ -94,7 +98,7 @@ export function PrintView() {
     params.set('paper', paper)
     params.set('orient', orientation)
     params.set('per', String(monthsPerPage))
-    params.set('fold', fold ? '1' : '0')
+    params.set('fold', foldMode)
     params.set(
       'show',
       (Object.keys(show) as (keyof PrintContent)[])
@@ -102,7 +106,13 @@ export function PrintView() {
         .join(','),
     )
     router.replace(`/print?${params.toString()}`, { scroll: false })
-  }, [months, paper, orientation, monthsPerPage, fold, show, router])
+  }, [months, paper, orientation, monthsPerPage, foldMode, show, router])
+
+  /**
+   * 每頁月數不支援目前的摺法時（例如切到 3 個月）就當作不對折，但保留原本的
+   * 選擇 —— 使用者切回 2 或 4 個月時，剛才選的立牌模式會自己回來。
+   */
+  const effectiveFold = isFoldAllowed(foldMode, monthsPerPage) ? foldMode : 'none'
 
   // 農曆與天文計算只跟月份、城市有關；改紙張或版面不重算
   const printMonths = useMemo<PrintMonth[]>(
@@ -150,6 +160,17 @@ export function PrintView() {
     [],
   )
 
+  /**
+   * 立牌的摺線軸是站法決定的，紙張方向配錯會讓面板變成 105mm 的極窄長條，
+   * 格子擠到印不出來。所以選立牌時順手把方向切到建議值 —— 方向按鈕仍然開著，
+   * 使用者要改回去隨時可以。只在點選時做，不放進 effect（會跟網址回寫打架）。
+   */
+  const handleFoldModeChange = useCallback((next: FoldMode) => {
+    setFoldMode(next)
+    const recommended = FOLD_MODES[next].recommendedOrientation
+    if (recommended) setOrientation(recommended)
+  }, [])
+
   const handlePrint = useCallback(() => window.print(), [])
 
   return (
@@ -177,7 +198,7 @@ export function PrintView() {
           paper={paper}
           orientation={orientation}
           monthsPerPage={monthsPerPage}
-          fold={fold}
+          foldMode={effectiveFold}
           show={show}
           city={city}
           pageCount={pages.length}
@@ -185,7 +206,7 @@ export function PrintView() {
           onPaperChange={setPaper}
           onOrientationChange={setOrientation}
           onMonthsPerPageChange={setMonthsPerPage}
-          onFoldChange={setFold}
+          onFoldModeChange={handleFoldModeChange}
           onShowChange={handleShowChange}
           onCityChange={updateCity}
           onPrint={handlePrint}
@@ -211,7 +232,7 @@ export function PrintView() {
                 paper={paper}
                 orientation={orientation}
                 city={city}
-                fold={fold}
+                foldMode={effectiveFold}
                 previewScale={previewScale}
               />
             ))}

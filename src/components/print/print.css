@@ -38,9 +38,13 @@
 
   /* 對折幾何：只要 padding 四邊對稱、且 .print-months 是唯一的 flex:1 子元素，
      間距中心就恆等於紙張幾何中心（算式中 gap 會相消），摺線必然落在間距正中。
-     gutter = 2 × margin 則讓對折後的每一半四邊留白一致。 */
+     gutter = 2 × margin 則讓對折後的每一半四邊留白一致。
+
+     兩軸分開設定：每頁四個月時只有摺線那一軸該撐開，另一軸維持一般間距，
+     否則會白白吃掉 6.5mm 的面板寬度。上面的中心論證對每一軸各自成立。 */
   --sheet-margin: 10mm;
-  --gutter: 7mm;
+  --gutter-x: 7mm;
+  --gutter-y: 7mm;
 
   --ink: #000;
   --ink-muted: #444; /* 僅用於 ≥7pt 的副標與圖例 */
@@ -189,11 +193,28 @@
 
 /* ---------------- 對折 ---------------- */
 
-/* data-fold 由 PrintSheet 決定：只有「每頁 2 個月且開啟對折留白」才會設。
-   per=4 兩軸都是 2 軌，但沒有人會把 A4 對折兩次成 A6，所以不套用。 */
-.print-sheet[data-fold="h"],
+/* data-fold 是摺線軸，由 PrintSheet 決定。收納對折只在每頁 2 個月時成立
+   （沒有人會把 A4 對折兩次成 A6）；立牌只摺一次、每面放兩個月，所以每頁
+   2 或 4 個月都成立。只撐開摺線那一軸。 */
+.print-sheet[data-fold="h"] {
+  --gutter-y: calc(var(--sheet-margin) * 2);
+}
+
 .print-sheet[data-fold="v"] {
-  --gutter: calc(var(--sheet-margin) * 2);
+  --gutter-x: calc(var(--sheet-margin) * 2);
+}
+
+/* 直向摺線時左右兩欄各是一個面板，同一面板的月份要上下疊放才對，
+   所以改成先填滿一欄再換欄。月份數湊不滿整頁時也會自然地先填左欄
+   （＝同一面），不會把兩個月拆到正反兩面去。 */
+.print-sheet[data-fold="v"] .print-months {
+  grid-auto-flow: column;
+}
+
+/* 橫立 V 的背面：繞水平軸對折會把「上」翻成「下」，所以平張上先轉 180°，
+   摺完才正立。@media print 只把 transform 清在 .print-sheet 上，不影響這裡。 */
+.print-month[data-rotate="180"] {
+  transform: rotate(180deg);
 }
 
 .print-fold-tick {
@@ -237,7 +258,8 @@
   flex: 1;
   min-height: 0;
   display: grid;
-  gap: var(--gutter);
+  column-gap: var(--gutter-x);
+  row-gap: var(--gutter-y);
   grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
   grid-template-rows: repeat(var(--rows), minmax(0, 1fr));
 }
@@ -560,6 +582,46 @@
     bottom: 0;
     left: 50%;
     border-left: 1px dashed rgb(0 0 0 / 0.3);
+  }
+
+  /* 橫立 V 的背面在平張上是顛倒的 —— 那是正確的（摺完就轉正），但預覽裡看
+     起來像壞掉。標上正面／背面才不會讓人以為排版出錯。只有橫立 V 需要：
+     直立 V 兩半都正立，哪一面朝外由使用者摺的時候決定，沒有正背之分。
+     這些標籤只存在於 @media screen，不會印出來。 */
+  .print-month[data-face] {
+    position: relative;
+  }
+
+  .print-month[data-face]::after {
+    position: absolute;
+    z-index: 1;
+    padding: 0.4mm 1.4mm;
+    border: 0.5px solid rgb(0 0 0 / 0.25);
+    border-radius: 1mm;
+    background: rgb(255 255 255 / 0.9);
+    font-family: var(--sans);
+    font-size: 7pt;
+    line-height: 1.4;
+    letter-spacing: 0.05em;
+    color: rgb(0 0 0 / 0.55);
+    white-space: nowrap;
+    pointer-events: none;
+  }
+
+  /* 月份標題置中，左上角是空的，標籤放這裡不會蓋到任何內容 */
+  .print-month[data-face="front"]::after {
+    content: "正面";
+    top: 0;
+    left: 0;
+  }
+
+  /* 父層已轉 180°：定位在父層的右下角才會顯示在視覺上的左上角，
+     標籤自身再轉 180° 抵銷，文字才是正的。 */
+  .print-month[data-face="back"]::after {
+    content: "背面・摺後轉正";
+    right: 0;
+    bottom: 0;
+    transform: rotate(180deg);
   }
 }
 
