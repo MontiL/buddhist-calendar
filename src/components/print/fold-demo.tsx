@@ -27,10 +27,24 @@ const TENT_RIDGE_Y = 24
 /** 橫立 V 的面板閉合形狀：從頂稜垂直落下，skewX 之後才倒成 Λ */
 const TENT_CLOSED = '161,24 193,24 193,76 161,76'
 
-/** 直立 V 的書脊 */
-const BOOK_SPINE_X = 177
-const BOOK_RIGHT = '177,24 216,26 216,62 177,70'
-const BOOK_LEFT = '177,24 138,26 138,62 177,70'
+/**
+ * 直立 V 的書脊（垂直），以及兩片面板。
+ *
+ * 畫法：正面那一片是正正方方的矩形，只有另一片斜著往後收。兩片都畫成有透視的
+ * 四邊形會讀成盒子或屏風 —— 兩片一樣大、又都在傾斜時，沒有任何線索指出哪一片
+ * 離觀者近。「正面矩形 + 一片斜翼」才一眼讀成「一張紙摺起來立著」，這也正是
+ * 按鈕小圖示用的造型，兩者才像在講同一件事。
+ *
+ * 書脊 ＝ 矩形的右緣，也就是兩片共用的那條邊。
+ *
+ * 面板比例照實際紙張：橫向紙對折後每一面是直向 A5（148.5 × 210），所以要畫成
+ * 高大於寬。畫成橫的一樣會讀成盒子。
+ */
+const BOOK_SPINE_X = 186
+/** 正面那一片：不做透視變形，就是個矩形 */
+const BOOK_FRONT = '146,22 186,22 186,74 146,74'
+/** 往後收的斜翼：遠端縮短並往中間收 */
+const BOOK_WING = '186,22 210,29 210,67 186,74'
 
 interface FoldDemoProps {
   mode: Extract<FoldMode, 'standTall' | 'standWide'>
@@ -153,19 +167,21 @@ function TentFolded() {
  * 所以用 scaleX —— 書脊（transform-origin）全程不動。
  */
 function BookFolded() {
-  const origin = { transformOrigin: `${BOOK_SPINE_X}px 46px` }
+  const origin = { transformOrigin: `${BOOK_SPINE_X}px 48px` }
 
   return (
     <g>
-      {/* 書脊是離觀者最近的那條邊，也是最低的著地點（y=70） */}
-      <Ground y={71} rx={40} />
+      {/* 正面那一片的下緣是平的，落在 y=74 */}
+      <Ground y={76} rx={36} />
+      {/* 斜翼先畫：書脊附近的重疊由正面那片蓋掉 */}
       <g className="fold-demo-panel" data-fold="book" style={origin}>
-        <polygon points={BOOK_LEFT} fill="var(--background)" />
-        <MiniMonth x={157.5} y={45.5} skew={-3} />
+        <polygon points={BOOK_WING} fill="var(--background)" />
+        {/* 內容跟著面板一起縮短，才看得出這一面是斜著離開觀者的 */}
+        <MiniMonth x={198} y={48} skew={17} scale={0.45} />
       </g>
       <g className="fold-demo-panel" data-fold="book" style={origin}>
-        <polygon points={BOOK_RIGHT} fill="var(--background)" />
-        <MiniMonth x={196.5} y={45.5} skew={3} />
+        <polygon points={BOOK_FRONT} fill="var(--background)" />
+        <MiniMonth x={166} y={48} />
       </g>
     </g>
   )
@@ -205,16 +221,20 @@ function MiniMonth({
   y,
   rotate = 0,
   skew = 0,
+  scale = 1,
 }: {
   x: number
   y: number
   rotate?: number
   skew?: number
+  /** 水平縮放：斜著離開觀者的面板，內容也要跟著縮短才對得上透視 */
+  scale?: number
 }) {
   const transform = [
     `translate(${x} ${y})`,
     rotate ? `rotate(${rotate})` : '',
     skew ? `skewY(${skew})` : '',
+    scale !== 1 ? `scale(${scale} 1)` : '',
   ]
     .filter(Boolean)
     .join(' ')
