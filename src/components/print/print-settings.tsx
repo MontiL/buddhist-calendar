@@ -2,6 +2,7 @@
 
 import { PrinterIcon } from 'lucide-react'
 
+import { FoldDemo } from './fold-demo'
 import { MonthPicker } from './month-picker'
 import { MIN_COL_MM, MIN_ROW_MM, cellSizeMm } from './print-sheet'
 import { Button } from '@/components/ui/button'
@@ -257,6 +258,11 @@ function FoldModePicker({
       <p className="mt-1.5 text-xs text-muted-foreground">
         {FOLD_MODES[foldMode].description}
       </p>
+
+      {/* 只有立牌需要示意圖：不對折與對折收納沒有「摺完會變成什麼」的疑問 */}
+      {(foldMode === 'standTall' || foldMode === 'standWide') && (
+        <FoldDemo mode={foldMode} />
+      )}
     </Field>
   )
 }

@@ -1,0 +1,100 @@
+/*
+ * 立牌摺疊示意圖的動畫。
+ *
+ * 刻意不寫進 print.css：那個檔案是紙張輸出用的，恆為白底黑字、不隨主題變動。
+ * 這裡的示意圖是介面元件，會跟著明暗模式走，兩者不該混在一起。
+ *
+ * 面板一律畫成「閉合」的形狀，再靠 transform 張開到定位 —— 所以動畫只需要
+ * 純 rotate／scaleX，不必內插 SVG 的 points（CSS 做不到）。摺線是
+ * transform-origin，全程固定不動。
+ */
+
+.fold-demo-panel {
+  /* SVG 元素的 transform-origin 預設就以 viewBox 座標為準，但明寫比較保險：
+     少了它，某些瀏覽器會改用元素自身的 bounding box，摺線就會跑掉。 */
+  transform-box: view-box;
+}
+
+/* 靜止狀態＝張開後。減少動態偏好、或動畫還沒開始的那一幀，都停在這裡 ——
+   停在資訊完整的那一格，而不是停在什麼都看不出來的閉合狀態。 */
+/* skewX 而不是 rotate：rotate 會把共用的頂稜也一起轉走，兩片面板就脫開了。
+   skewX 只位移離原點軸線越遠的點，頂稜（origin 那條線）原地不動。 */
+.fold-demo-panel[data-fold="tent"][data-side="front"] {
+  transform: skewX(-27deg);
+}
+
+.fold-demo-panel[data-fold="tent"][data-side="back"] {
+  transform: skewX(27deg);
+}
+
+.fold-demo-panel[data-fold="book"] {
+  transform: scaleX(1);
+}
+
+.fold-demo-shadow {
+  opacity: 0.12;
+}
+
+/* 專案裡的第一組 @keyframes。整組動畫都關在偏好查詢內，預設不播。
+ *
+ * 每條規則都寫完整的 animation 簡寫（含動畫名），不要拆成「共用的簡寫設時間 +
+ * 各自的 animation-name」—— 沒有名字的簡寫等於 animation: none，壓縮器會判定
+ * 它不做事而把時間函數整個丟掉，只留下後面那個 animation-name，結果 duration
+ * 變成 0s、動畫瞬間結束。多打幾次時間值換來不受壓縮器影響。
+ *
+ * cubic-bezier 尾段趨緩，收尾像紙張立定而不是機械停止。 */
+@media (prefers-reduced-motion: no-preference) {
+  .fold-demo-panel[data-fold="tent"][data-side="front"] {
+    animation: fold-demo-tent-front 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .fold-demo-panel[data-fold="tent"][data-side="back"] {
+    animation: fold-demo-tent-back 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .fold-demo-panel[data-fold="book"] {
+    animation: fold-demo-book 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .fold-demo-shadow {
+    animation: fold-demo-shadow 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+
+/* 從完全閉合（兩片重疊成一片）倒開成 Λ */
+@keyframes fold-demo-tent-front {
+  from {
+    transform: skewX(0deg);
+  }
+  to {
+    transform: skewX(-27deg);
+  }
+}
+
+@keyframes fold-demo-tent-back {
+  from {
+    transform: skewX(0deg);
+  }
+  to {
+    transform: skewX(27deg);
+  }
+}
+
+/* 從幾乎完全閉合（側看只剩一條線）張開到定位 */
+@keyframes fold-demo-book {
+  from {
+    transform: scaleX(0.12);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes fold-demo-shadow {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 0.12;
+  }
+}
